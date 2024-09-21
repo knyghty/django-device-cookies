@@ -2,7 +2,6 @@ from django.contrib.auth import signals as auth_signals
 from django.dispatch import receiver
 
 from . import config
-
 from .models import FailedAuthenticationAttempt
 from .models import Lockout
 
@@ -18,5 +17,7 @@ def check_for_lockout(sender, credentials, request, **kwargs):
     FailedAuthenticationAttempt.objects.register_failure(
         credentials["username"], device_cookie
     )
-    if FailedAuthenticationAttempt.objects.should_lock_out_user(credentials["username"], device_cookie):
+    if FailedAuthenticationAttempt.objects.should_lock_out_user(
+        credentials["username"], device_cookie
+    ):
         Lockout.objects.lock_out_user(credentials["username"], device_cookie)

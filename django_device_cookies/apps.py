@@ -7,4 +7,4 @@ class DeviceCookiesConfig(AppConfig):
     label = "device_cookies"
 
     def ready(self):
-        from . import signals
+        pass
