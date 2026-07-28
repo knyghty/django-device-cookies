@@ -10,19 +10,20 @@ classifiers = [
     "Development Status :: 1 - Planning",
     "Environment :: Web Environment",
     "Framework :: Django",
-    "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = ["django"]
@@ -30,6 +31,7 @@ description = "Login throttling with device cookies"
 license = { "file" = "LICENSE" }
 name = "django-device-cookies"
 readme = "README.rst"
+requires-python = ">=3.10"
 version = "0.1.0"
 
 [project.urls]
@@ -47,7 +49,7 @@ exclude = ["/tests", "requirements.txt", "runtests.py"]
 packages = ["django_device_cookies"]
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["DJ", "E", "F", "I", "UP", "W"]
