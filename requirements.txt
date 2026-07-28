@@ -1,5 +1,5 @@
 # Development requirements.
 coverage
 django
-pre-commit
+prek
 wheel
