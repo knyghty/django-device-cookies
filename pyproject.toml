@@ -41,13 +41,17 @@ Repository = "https://github.com/knyghty/django-device-cookies"
 
 [tool.coverage.run]
 branch = true
-source = ["."]
+source = ["django_device_cookies"]
 
 [tool.hatch.build.targets.sdist]
 exclude = ["/tests", "requirements.txt", "runtests.py"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["django_device_cookies"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+testpaths = ["tests"]
 
 [tool.ruff]
 target-version = "py310"
