@@ -1,12 +1,15 @@
+from django.http import HttpRequest
+from django.http import HttpResponseBase
+from django.utils.deprecation import MiddlewareMixin
+
 from . import utils
 
 
-class DeviceCookieMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        if hasattr(request, "issue_device_cookie"):
-            utils.issue_device_cookie(response, request.user)
+class DeviceCookieMiddleware(MiddlewareMixin):
+    def process_response(
+        self, request: HttpRequest, response: HttpResponseBase
+    ) -> HttpResponseBase:
+        trusted = request.META.get(utils.META_KEY)
+        if trusted is not None:
+            utils.issue_device_cookie(response, *trusted)
         return response

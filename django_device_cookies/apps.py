@@ -6,5 +6,6 @@ class DeviceCookiesConfig(AppConfig):
     name = "django_device_cookies"
     label = "device_cookies"
 
-    def ready(self):
-        pass
+    def ready(self) -> None:
+        from . import checks  # noqa: F401
+        from . import receivers  # noqa: F401

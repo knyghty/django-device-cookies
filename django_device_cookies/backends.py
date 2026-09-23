@@ -1,22 +1,49 @@
-from django.contrib.auth.backends import BaseBackend
+from asgiref.sync import sync_to_async
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest
+from django.views.decorators.debug import sensitive_variables
 
-from . import config
 from . import utils
-from .models import Lockout
+from .models import FailedAuthenticationAttempt
 
 
-class DeviceCookieBackend(BaseBackend):
-    def authenticate(self, request, username=None, **kwargs):
-        if username is None:
-            # Only username based authentication is supported.
-            return None
-        if cookie := request.COOKIES.get(config.DEVICE_COOKIE_NAME, ""):
-            if not utils.validate_device_cookie(cookie, username):
-                if Lockout.objects.is_user_locked_out(
-                    username=username, device_cookie=cookie
-                ):
-                    raise PermissionDenied
-        if Lockout.objects.is_user_locked_out(username=username, device_cookie=""):
-            raise PermissionDenied
-        return None
+def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
+    bucket = utils.get_bucket(request, credentials)
+    if bucket and FailedAuthenticationAttempt.objects.is_locked_out(*bucket):
+        password = credentials.get("password")
+        if isinstance(password, str):
+            get_user_model()().set_password(password)
+        raise PermissionDenied
+
+
+class DeviceCookieBackend:
+    """Do not add ``get_user``: ``force_login()`` picks the first backend with it."""
+
+    @sensitive_variables("credentials")
+    def authenticate(self, request: HttpRequest | None, **credentials: object) -> None:
+        gate(request, credentials)
+
+    @sensitive_variables("credentials")
+    async def aauthenticate(
+        self, request: HttpRequest | None, **credentials: object
+    ) -> None:
+        return await sync_to_async(self.authenticate)(request, **credentials)
+
+
+class DeviceCookieModelBackend(ModelBackend):
+    @sensitive_variables("credentials")
+    def authenticate(
+        self, request: HttpRequest | None, **credentials: object
+    ) -> AbstractBaseUser | None:
+        gate(request, credentials)
+        return super().authenticate(request, **credentials)
+
+    @sensitive_variables("credentials")
+    async def aauthenticate(
+        self, request: HttpRequest | None, **credentials: object
+    ) -> AbstractBaseUser | None:
+        await sync_to_async(gate)(request, credentials)
+        return await super().aauthenticate(request, **credentials)
