@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -39,12 +39,15 @@ version = "0.1.0"
 Homepage = "https://github.com/knyghty/django-device-cookies"
 Repository = "https://github.com/knyghty/django-device-cookies"
 
+[dependency-groups]
+dev = ["coverage[toml]", "prek", "pytest", "pytest-django", "ty"]
+
 [tool.coverage.run]
 branch = true
 source = ["django_device_cookies"]
 
 [tool.hatch.build.targets.sdist]
-exclude = ["/tests", "requirements.txt", "runtests.py"]
+exclude = ["/tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["django_device_cookies"]
@@ -57,7 +60,45 @@ testpaths = ["tests"]
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["DJ", "E", "F", "I", "UP", "W"]
+select = [
+    "A",
+    "ANN",
+    "B",
+    "BLE",
+    "C4",
+    "DJ",
+    "DTZ",
+    "E",
+    "EM",
+    "ERA",
+    "F",
+    "FLY",
+    "FURB",
+    "G",
+    "I",
+    "ISC",
+    "LOG",
+    "N",
+    "PERF",
+    "PIE",
+    "PL",
+    "PT",
+    "PTH",
+    "RET",
+    "RUF",
+    "S",
+    "SIM",
+    "T20",
+    "TC",
+    "TRY",
+    "UP",
+    "W",
+]
+ignore = ["RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"django_device_cookies/apps.py" = ["PLC0415"]
+"tests/*" = ["S101", "S105", "S106", "S107"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
