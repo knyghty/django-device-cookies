@@ -16,26 +16,28 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install prek
-        uses: j178/prek-action@v3.0.0
+        uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
         with:
           install-only: true
       - name: Update hook versions
         run: prek update
       - name: Run hooks
         run: prek run --all-files || prek run --all-files || true
+      # Compare the whole status so a hook that creates a file cannot pass as
+      # a config-only change and approve itself below.
       - name: Check which files changed
         id: changes
         run: |
-          if [ -n "$(git status --porcelain)" ] && [ "$(git diff --name-only)" = ".pre-commit-config.yaml" ]; then
+          if [ "$(git status --porcelain)" = " M .pre-commit-config.yaml" ]; then
             echo "config-only=true" >> "$GITHUB_OUTPUT"
           else
             echo "config-only=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Create pull request
         id: pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           commit-message: Update pre-commit hooks
           title: Update pre-commit hooks
