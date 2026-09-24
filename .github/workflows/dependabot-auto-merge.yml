@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
-        uses: dependabot/fetch-metadata@v3
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3
       - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
@@ -23,8 +23,6 @@ jobs:
           gh pr merge --squash --auto "$PR_URL" ||
             gh pr merge --squash "$PR_URL" ||
             echo "::warning::Could not enable auto-merge or merge directly"
-      # Action bumps are usually majors and CI exercises them directly, so
-      # approve every update type there; elsewhere majors wait for review.
       - name: Approve
         if: >-
           contains(fromJSON('["github_actions", "github-actions"]'), steps.metadata.outputs.package-ecosystem)
