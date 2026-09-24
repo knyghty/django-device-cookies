@@ -37,7 +37,7 @@ def check_backend(
     if index is None:
         return [
             checks.Error(
-                "AUTHENTICATION_BACKENDS has no device cookie backend, so nothing "
+                "AUTHENTICATION_BACKENDS has no device cookie backend. Nothing "
                 "throttles logins.",
                 hint='Add "django_device_cookies.backends.DeviceCookieBackend" as '
                 "the first entry.",
@@ -47,8 +47,8 @@ def check_backend(
     if index:
         return [
             checks.Warning(
-                "The device cookie backend is not first in AUTHENTICATION_BACKENDS, "
-                "so a locked-out client that knows the password still logs in.",
+                "The device cookie backend is not first in AUTHENTICATION_BACKENDS. "
+                "A locked-out client that knows the password still logs in.",
                 hint="Move it to the first entry.",
                 id="device_cookies.W001",
             )
@@ -64,8 +64,8 @@ def check_middleware(
         return []
     return [
         checks.Error(
-            "MIDDLEWARE has no device cookie middleware, so no client gets a device "
-            "cookie and every login attempt counts as untrusted.",
+            "MIDDLEWARE has no device cookie middleware. No client gets a device "
+            "cookie, and every login attempt counts as untrusted.",
             hint='Add "django_device_cookies.middleware.DeviceCookieMiddleware".',
             id="device_cookies.E002",
         )
@@ -88,11 +88,10 @@ def check_username_field(
         return []
     return [
         checks.Warning(
-            f"Django masks USERNAME_FIELD {field!r} in the user_login_failed signal, "
-            "so the throttle ignores callers that pass it to authenticate() by name.",
-            hint='Pass it as "username", as Django\'s login form does, or rename the '
-            "field so its name contains none of: api, token, key, secret, "
-            "password, signature.",
+            f"Django masks USERNAME_FIELD {field!r} in the user_login_failed signal. "
+            "The throttle ignores callers that pass it to authenticate() by name.",
+            hint='Pass it as "username", as Django\'s login form does, or give the '
+            "field a name without api, token, key, secret, password or signature.",
             id="device_cookies.W003",
         )
     ]
@@ -106,7 +105,7 @@ def check_secure(
         return []
     return [
         checks.Warning(
-            "DEVICE_COOKIE_SECURE is off, so browsers send device cookies over HTTP.",
+            "DEVICE_COOKIE_SECURE is off. Browsers send device cookies over HTTP.",
             hint="Set DEVICE_COOKIE_SECURE = True.",
             id="device_cookies.W002",
         )
@@ -178,8 +177,8 @@ def check_settings(
     if cross_site and not config.DEVICE_COOKIE_SECURE:
         errors.append(
             checks.Error(
-                "Browsers reject a SameSite=None cookie that is not Secure, so "
-                "no client gets a device cookie.",
+                "Browsers reject a SameSite=None cookie that is not Secure. "
+                "No client gets a device cookie.",
                 hint="Set DEVICE_COOKIE_SECURE = True.",
                 id="device_cookies.E004",
             )

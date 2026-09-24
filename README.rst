@@ -74,7 +74,7 @@ Limitations
 -----------
 
 - The throttle sees only calls to ``authenticate()`` with a request.
-- A client with a cookie can drop it, so it gets two buckets.
+- A client with a cookie can drop it and use the untrusted bucket too.
 - Requests that arrive at the same moment can all pass the gate.
 - One password tried against many accounts is not throttled.
 - The database keeps every submitted username in plain text.
