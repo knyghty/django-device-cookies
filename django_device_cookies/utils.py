@@ -41,15 +41,6 @@ def get_canonical_username(username: str) -> str | None:
     return str(user.get_username())
 
 
-async def aget_canonical_username(username: str) -> str | None:
-    manager = get_user_model()._default_manager
-    try:
-        user = await manager.aget_by_natural_key(username)
-    except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
-        return None
-    return str(user.get_username())
-
-
 def get_cookie_name(username: str) -> str:
     if not config.DEVICE_COOKIE_PER_USER:
         return config.DEVICE_COOKIE_NAME
@@ -90,20 +81,6 @@ def get_bucket(
     key = normalize_username(canonical or username)
     device = get_device(request, username, canonical)
     if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
-        device = ""
-    return key, device
-
-
-async def aget_bucket(
-    request: HttpRequest | None, credentials: Mapping[str, object]
-) -> tuple[str, str] | None:
-    username = get_username(credentials)
-    if username is None:
-        return None
-    canonical = await aget_canonical_username(username)
-    key = normalize_username(canonical or username)
-    device = get_device(request, username, canonical)
-    if device and await FailedAuthenticationAttempt.objects.ais_revoked(key, device):
         device = ""
     return key, device
 

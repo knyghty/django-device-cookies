@@ -23,13 +23,6 @@ def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
         raise PermissionDenied
 
 
-async def agate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
-    bucket = await utils.aget_bucket(request, credentials)
-    if bucket and await FailedAuthenticationAttempt.objects.ais_locked_out(*bucket):
-        await sync_to_async(hash_password, thread_sensitive=False)(credentials)
-        raise PermissionDenied
-
-
 class DeviceCookieBackend:
     @sensitive_variables("credentials")
     def authenticate(self, request: HttpRequest | None, **credentials: object) -> None:
@@ -39,7 +32,7 @@ class DeviceCookieBackend:
     async def aauthenticate(
         self, request: HttpRequest | None, **credentials: object
     ) -> None:
-        await agate(request, credentials)
+        await sync_to_async(gate)(request, credentials)
 
 
 class DeviceCookieModelBackend(ModelBackend):
@@ -54,5 +47,5 @@ class DeviceCookieModelBackend(ModelBackend):
     async def aauthenticate(
         self, request: HttpRequest | None, **credentials: object
     ) -> AbstractBaseUser | None:
-        await agate(request, credentials)
+        await sync_to_async(gate)(request, credentials)
         return await super().aauthenticate(request, **credentials)
