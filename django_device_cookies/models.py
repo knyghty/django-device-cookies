@@ -5,6 +5,9 @@ from django.utils import timezone
 
 from . import config
 
+USERNAME_LENGTH = 255
+NONCE_LENGTH = 32
+
 
 def get_cutoff() -> datetime.datetime:
     return timezone.now() - config.DEVICE_COOKIE_PERIOD
@@ -41,8 +44,8 @@ class FailedAuthenticationAttemptQuerySet(models.QuerySet):
 
 
 class FailedAuthenticationAttempt(models.Model):
-    username = models.CharField(max_length=config.USERNAME_MAX_LENGTH)
-    device = models.CharField(max_length=config.NONCE_LENGTH, blank=True)
+    username = models.CharField(max_length=USERNAME_LENGTH)
+    device = models.CharField(max_length=NONCE_LENGTH, blank=True)
     time = models.DateTimeField(default=timezone.now)
 
     objects = models.Manager.from_queryset(FailedAuthenticationAttemptQuerySet)()

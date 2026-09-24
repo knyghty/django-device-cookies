@@ -2,9 +2,6 @@ import datetime
 
 from django.conf import settings
 
-NONCE_LENGTH = 32
-USERNAME_MAX_LENGTH = 255
-
 DEVICE_COOKIE_NAME: str
 DEVICE_COOKIE_PERIOD: datetime.timedelta
 DEVICE_COOKIE_ATTEMPTS_PER_PERIOD: int

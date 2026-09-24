@@ -14,6 +14,8 @@ from django.http import HttpResponseBase
 from django.views.decorators.debug import sensitive_variables
 
 from . import config
+from .models import NONCE_LENGTH
+from .models import USERNAME_LENGTH
 from .models import FailedAuthenticationAttempt
 
 SALT = "django_device_cookies"
@@ -24,7 +26,7 @@ MASK = "*" * 20
 
 def normalize_username(username: object) -> str:
     normalized = unicodedata.normalize("NFKC", str(username)).casefold()
-    return normalized[: config.USERNAME_MAX_LENGTH]
+    return normalized[:USERNAME_LENGTH]
 
 
 def get_username(credentials: Mapping[str, object]) -> str | None:
@@ -51,14 +53,14 @@ def get_cookie_name(username: str) -> str:
 
 
 def derive_nonce(secret: str) -> str:
-    return hashlib.sha256(secret.encode()).hexdigest()[: config.NONCE_LENGTH]
+    return hashlib.sha256(secret.encode()).hexdigest()[:NONCE_LENGTH]
 
 
 def build_payload(user: AbstractBaseUser, nonce: str | None = None) -> dict[str, str]:
     return {
         "u": str(user.get_username()),
         "i": str(user.pk),
-        "n": nonce or secrets.token_hex(config.NONCE_LENGTH // 2),
+        "n": nonce or secrets.token_hex(NONCE_LENGTH // 2),
     }
 
 
@@ -76,7 +78,7 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     ):
         return ""
     nonce = payload.get("n")
-    if not isinstance(nonce, str) or len(nonce) != config.NONCE_LENGTH:
+    if not isinstance(nonce, str) or len(nonce) != NONCE_LENGTH:
         return ""
     return nonce
 

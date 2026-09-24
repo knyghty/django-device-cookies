@@ -21,9 +21,9 @@ from django.test import RequestFactory
 from django.urls import reverse
 from pytest_django.fixtures import Settings
 
-from django_device_cookies import config
 from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
+from django_device_cookies.models import NONCE_LENGTH
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.signals import lockout
 
@@ -107,7 +107,7 @@ def test_login_issues_a_device_cookie(client: Client, user: User) -> None:
     assert morsel["domain"] == ""
     first = read_payload(morsel.value)
     assert first["u"] == "alice"
-    assert len(first["n"]) == config.NONCE_LENGTH
+    assert len(first["n"]) == NONCE_LENGTH
     assert read_payload(login(client).cookies[COOKIE].value)["n"] != first["n"]
 
 
@@ -132,7 +132,7 @@ def test_lockout_is_logged_and_signalled(
     assert request.path == reverse("login")
     device = received[0]["device"]
     assert isinstance(device, str)
-    assert len(device) == (config.NONCE_LENGTH if cookie else 0)
+    assert len(device) == (NONCE_LENGTH if cookie else 0)
     clients = "device" if cookie else "untrusted clients"
     assert caplog.messages == [f"Locked out {clients} for username 'alice'."]
 
@@ -157,7 +157,7 @@ def test_fabricated_cookies_share_the_untrusted_bucket(
     client: Client, user: User
 ) -> None:
     for _ in range(LIMIT):
-        client.cookies[COOKIE] = secrets.token_hex(config.NONCE_LENGTH // 2)
+        client.cookies[COOKIE] = secrets.token_hex(NONCE_LENGTH // 2)
         attempt(client)
     client.cookies[COOKIE] = "not even close"
     assert not logged_in(login(client))
