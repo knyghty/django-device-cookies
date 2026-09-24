@@ -23,8 +23,6 @@ jobs:
           gh pr merge --squash --auto "$PR_URL" ||
             gh pr merge --squash "$PR_URL" ||
             echo "::warning::Could not enable auto-merge or merge directly"
-      # CI exercises action bumps directly, and they are usually majors.
-      # Approve every update type there. Elsewhere majors wait for review.
       - name: Approve
         if: >-
           contains(fromJSON('["github_actions", "github-actions"]'), steps.metadata.outputs.package-ecosystem)

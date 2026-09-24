@@ -42,8 +42,6 @@ jobs:
           body: Automated hook update from the `update-hooks` workflow, using `prek update`.
           branch: update-pre-commit-hooks
           delete-branch: true
-      # GitHub holds CI runs from bot-authored PRs for manual approval.
-      # Approve the run to let the required checks report.
       - name: Approve CI run
         if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
         env:
@@ -72,7 +70,6 @@ jobs:
         run: |
           gh pr merge --squash --auto "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" ||
             echo "::warning::Could not enable auto-merge"
-      # The bot authors the PR. This approval comes from the token owner.
       - name: Approve if only the hook config changed
         if: steps.changes.outputs.config-only == 'true' && (steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated')
         env:
