@@ -14,11 +14,11 @@ denial of service: a fixed lockout policy lets an attacker lock selected users
 out of the site. Locking the account/IP pair instead is better against denial
 of service but weaker against botnets and proxies, and harder to implement
 correctly. Device cookies are a variant of account/IP blocking that uses a
-browser cookie instead of an IP address. Clients that have previously logged
-in are trusted and locked out individually. All untrusted clients share one
-temporary lockout per account, which bounds the guesses against an account to
-``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD`` per ``DEVICE_COOKIE_PERIOD`` regardless
-of the size of the botnet.
+browser cookie instead of an IP address. The throttle trusts a client that
+logged in before and locks it out individually. All untrusted clients share
+one temporary lockout per account. That bounds the guesses against an account
+to ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD`` per ``DEVICE_COOKIE_PERIOD``
+regardless of the size of the botnet.
 
 Installation
 ------------
@@ -26,12 +26,14 @@ Installation
 1. Add ``"django_device_cookies"`` to ``INSTALLED_APPS``.
 2. Add ``"django_device_cookies.middleware.DeviceCookieMiddleware"`` to
    ``MIDDLEWARE``.
-3. Set ``AUTHENTICATION_BACKENDS`` to
-   ``["django_device_cookies.backends.DeviceCookieModelBackend"]``.
+3. Put ``"django_device_cookies.backends.DeviceCookieBackend"`` first in
+   ``AUTHENTICATION_BACKENDS``, before ``ModelBackend`` or your own backends.
 4. Run ``manage.py migrate``.
 
-If your project uses other backends, put
-``"django_device_cookies.backends.DeviceCookieBackend"`` first instead.
+``django_device_cookies.backends.DeviceCookieModelBackend`` is ``ModelBackend``
+with the throttle built in, for projects that want a single entry. Django
+stores the path of the backend that authenticated a user in the session, so
+replacing ``ModelBackend`` with it logs out every existing session.
 
 Settings
 --------
@@ -100,15 +102,15 @@ Signals
 Maintenance
 -----------
 
-Expired failed attempts are not removed automatically. The
+Nothing removes expired failed attempts automatically. The
 ``clear_device_cookie_attempts`` management command deletes them. Run it on a
 regular basis, for example as a daily cron job.
 
 Limitations
 -----------
 
-- Only calls to ``authenticate()`` and ``aauthenticate()`` are throttled. Calls
-  without a request count as untrusted.
+- The throttle covers only calls to ``authenticate()`` and
+  ``aauthenticate()``. Calls without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
   the throttle ignores calls without a request that pass it by name.
@@ -126,11 +128,13 @@ System checks
 * **device_cookies.E003**: ``<setting>`` must be ``<expected>``.
 * **device_cookies.E004**: Browsers reject a ``SameSite=None`` cookie that is
   not ``Secure``. No client gets a device cookie.
+* **device_cookies.E005**: ``AUTHENTICATION_BACKENDS`` has only the device
+  cookie backend. Nothing authenticates.
 * **device_cookies.W003**: Django masks ``USERNAME_FIELD`` ``<field>`` in the
   ``user_login_failed`` signal. The throttle ignores calls to
   ``authenticate()`` without a request that pass it by name.
 
-The following check is run with the ``--deploy`` option:
+This check runs only with the ``--deploy`` option:
 
 * **device_cookies.W002**: ``DEVICE_COOKIE_SECURE`` is off. Browsers send
   device cookies over HTTP.
