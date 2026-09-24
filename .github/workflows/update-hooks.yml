@@ -16,9 +16,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install prek
-        uses: j178/prek-action@v3.0.0
+        uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
         with:
           install-only: true
       - name: Update hook versions
@@ -28,22 +28,20 @@ jobs:
       - name: Check which files changed
         id: changes
         run: |
-          if [ -n "$(git status --porcelain)" ] && [ "$(git diff --name-only)" = ".pre-commit-config.yaml" ]; then
+          if [ "$(git status --porcelain)" = " M .pre-commit-config.yaml" ]; then
             echo "config-only=true" >> "$GITHUB_OUTPUT"
           else
             echo "config-only=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Create pull request
         id: pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           commit-message: Update pre-commit hooks
           title: Update pre-commit hooks
           body: Automated hook update from the `update-hooks` workflow, using `prek update`.
           branch: update-pre-commit-hooks
           delete-branch: true
-      # GitHub holds CI runs from bot-authored PRs for manual approval;
-      # approve so the required checks can report.
       - name: Approve CI run
         if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
         env:
@@ -72,7 +70,6 @@ jobs:
         run: |
           gh pr merge --squash --auto "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" ||
             echo "::warning::Could not enable auto-merge"
-      # The bot authors the PR, so this approval comes from the token owner.
       - name: Approve if only the hook config changed
         if: steps.changes.outputs.config-only == 'true' && (steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated')
         env:
