@@ -109,6 +109,12 @@ Put it before ``include("django.contrib.auth.urls")`` so that it takes
 priority. If your project has its own reset view, subclass this one instead of
 Django's.
 
+The view renders the same template as Django's view,
+``registration/password_reset_confirm.html``, and takes the same attributes,
+such as ``template_name``. The admin app ships a version of that template. To
+use your own, put a template at that path in a directory that Django searches
+before the admin's, such as one of the ``DIRS`` in your ``TEMPLATES`` setting.
+
 Other measures
 --------------
 
