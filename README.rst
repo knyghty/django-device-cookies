@@ -75,8 +75,8 @@ Limitations
 
 - Only calls to ``authenticate()`` and ``aauthenticate()`` are throttled. Calls
   without a request count as untrusted.
-- An attacker who has a device cookie can delete it and get the limit again as
-  an unknown browser.
+- As in the OWASP protocol, a client with a device cookie gets
+  ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD`` twice: once with it and once without.
 - Attempts sent in parallel can exceed the limit.
 - One password tried against many accounts is not throttled.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
