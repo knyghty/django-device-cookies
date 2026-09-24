@@ -50,7 +50,8 @@ def test_registered() -> None:
         ([DJANGO], [(Error, "device_cookies.E001")]),
         ([DJANGO, GATE], [(CheckWarning, "device_cookies.W001")]),
         ([COMBINED], []),
-        (["tests.test_checks.Subclass"], []),
+        ([GATE], [(Error, "device_cookies.E005")]),
+        (["tests.test_checks.Subclass", DJANGO], []),
         (["nonexistent.Backend", GATE], [(CheckWarning, "device_cookies.W001")]),
     ],
 )

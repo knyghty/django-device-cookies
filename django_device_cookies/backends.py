@@ -1,4 +1,5 @@
 from asgiref.sync import sync_to_async
+from django.contrib import auth
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -33,6 +34,18 @@ class DeviceCookieBackend:
         self, request: HttpRequest | None, **credentials: object
     ) -> None:
         await sync_to_async(gate)(request, credentials)
+
+    def get_user(self, user_id: object) -> AbstractBaseUser | None:
+        for backend in auth.get_backends():
+            if isinstance(backend, DeviceCookieBackend):
+                continue
+            user = backend.get_user(user_id)
+            if user is not None:
+                return user
+        return None
+
+    async def aget_user(self, user_id: object) -> AbstractBaseUser | None:
+        return await sync_to_async(self.get_user)(user_id)
 
 
 class DeviceCookieModelBackend(ModelBackend):

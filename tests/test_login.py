@@ -8,6 +8,7 @@ import pytest
 from asgiref.sync import async_to_sync
 from django.contrib.auth import _clean_credentials
 from django.contrib.auth import aauthenticate
+from django.contrib.auth import aget_user
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
@@ -21,6 +22,7 @@ from django.urls import reverse
 from pytest_django.fixtures import Settings
 
 from django_device_cookies import config
+from django_device_cookies.backends import DeviceCookieBackend
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.signals import lockout
 
@@ -312,3 +314,14 @@ def test_signals_without_a_request(user: User) -> None:
 def test_force_login_works(client: Client, user: User) -> None:
     client.force_login(user)
     assert client.get(reverse("login")).wsgi_request.user == user
+
+
+def test_session_backed_by_the_gate_loads_the_user(
+    client: Client, user: User, settings: Settings
+) -> None:
+    settings.AUTHENTICATION_BACKENDS = [GATE, DJANGO]
+    client.force_login(user, backend=GATE)
+    request = client.get(reverse("login")).wsgi_request
+    assert request.user == user
+    assert async_to_sync(aget_user)(request) == user
+    assert DeviceCookieBackend().get_user(0) is None

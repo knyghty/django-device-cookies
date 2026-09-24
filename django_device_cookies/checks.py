@@ -17,15 +17,25 @@ from .backends import DeviceCookieModelBackend
 from .middleware import DeviceCookieMiddleware
 
 
+def load_class(path: str) -> type | None:
+    try:
+        obj = import_string(path)
+    except ImportError:
+        return None
+    return obj if inspect.isclass(obj) else None
+
+
 def find_first(paths: Iterable[str], classes: type | tuple[type, ...]) -> int | None:
     for index, path in enumerate(paths):
-        try:
-            obj = import_string(path)
-        except ImportError:
-            continue
-        if inspect.isclass(obj) and issubclass(obj, classes):
+        cls = load_class(path)
+        if cls is not None and issubclass(cls, classes):
             return index
     return None
+
+
+def is_gate(path: str) -> bool:
+    cls = load_class(path)
+    return cls is not None and issubclass(cls, DeviceCookieBackend)
 
 
 @checks.register(checks.Tags.security)
@@ -51,6 +61,15 @@ def check_backend(
                 "A locked-out client that knows the password still logs in.",
                 hint="Move it to the first entry.",
                 id="device_cookies.W001",
+            )
+        ]
+    if all(is_gate(path) for path in settings.AUTHENTICATION_BACKENDS):
+        return [
+            checks.Error(
+                "AUTHENTICATION_BACKENDS has only the device cookie backend. Nothing "
+                "authenticates.",
+                hint='Add "django.contrib.auth.backends.ModelBackend" after it.',
+                id="device_cookies.E005",
             )
         ]
     return []
