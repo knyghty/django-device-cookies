@@ -73,9 +73,10 @@ delete the user's attempts in the admin.
 Limitations
 -----------
 
-- The throttle sees only calls to ``authenticate()`` with a request.
+- Only calls to ``authenticate()`` are throttled. Calls without a request
+  count as untrusted.
 - A client with a cookie can drop it and use the untrusted bucket too.
-- Requests that arrive at the same moment can all pass the gate.
+- Simultaneous requests can all get through before a failure is recorded.
 - One password tried against many accounts is not throttled.
 - The database keeps every submitted username in plain text.
 - Every ``login()`` call sets a cookie, including staff impersonation.
