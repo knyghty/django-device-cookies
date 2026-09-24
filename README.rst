@@ -76,7 +76,6 @@ Limitations
 - Only calls to ``authenticate()`` and ``aauthenticate()`` are throttled. Calls
   without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
-- One password tried against many accounts is not throttled.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
   calls that pass it by name are not throttled.
 
