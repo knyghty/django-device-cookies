@@ -75,7 +75,8 @@ Limitations
 
 - Only calls to ``authenticate()`` are throttled. Calls without a request
   count as untrusted.
-- A client with a cookie can drop it and use the untrusted bucket too.
+- An attacker who has a device cookie can delete it and get the limit again as
+  an unknown browser.
 - Simultaneous requests can all get through before a failure is recorded.
 - One password tried against many accounts is not throttled.
 - The database keeps every submitted username in plain text.
