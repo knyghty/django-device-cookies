@@ -136,7 +136,8 @@ def test_lockout_is_logged_and_signalled(
     assert isinstance(device, str)
     assert len(device) == (NONCE_LENGTH if cookie else 0)
     clients = "device" if cookie else "untrusted clients"
-    assert caplog.messages == [f"Locked out {clients} for username 'alice'."]
+    key = hash_username("alice")
+    assert caplog.messages == [f"Locked out {clients} for key {key}."]
 
 
 def test_trusted_device_bypasses_untrusted_lockout(

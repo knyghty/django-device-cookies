@@ -30,6 +30,9 @@ Installation
    ``AUTHENTICATION_BACKENDS``, before ``ModelBackend`` or your own backends.
 4. Run ``manage.py migrate``.
 
+With two backends, a call to ``login()`` for a user that did not come from
+``authenticate()`` must pass ``backend``, as the Django documentation says.
+
 ``django_device_cookies.backends.DeviceCookieModelBackend`` is ``ModelBackend``
 with the throttle built in, for projects that want a single entry. Django
 stores the path of the backend that authenticated a user in the session.

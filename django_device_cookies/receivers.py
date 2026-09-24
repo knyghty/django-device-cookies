@@ -7,6 +7,7 @@ from django.http import HttpRequest
 
 from . import utils
 from .models import FailedAuthenticationAttempt
+from .models import hash_username
 from .signals import lockout
 
 logger = logging.getLogger("django_device_cookies")
@@ -37,7 +38,7 @@ def record_failure(
     attempts = FailedAuthenticationAttempt.objects
     if attempts.record_failure(username, device):
         clients = "device" if device else "untrusted clients"
-        logger.warning("Locked out %s for username %r.", clients, username)
+        logger.warning("Locked out %s for key %s.", clients, hash_username(username))
         lockout.send(
             sender=FailedAuthenticationAttempt,
             username=username,
@@ -45,4 +46,4 @@ def record_failure(
             request=request,
         )
     if device and attempts.is_revoked(username, device):
-        logger.warning("Revoked a device of username %r.", username)
+        logger.warning("Revoked a device of key %s.", hash_username(username))
