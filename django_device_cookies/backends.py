@@ -11,12 +11,14 @@ from . import utils
 from .models import FailedAuthenticationAttempt
 
 
+@sensitive_variables()
 def hash_password(credentials: dict[str, object]) -> None:
     password = credentials.get("password")
     if isinstance(password, str):
         get_user_model()().set_password(password)
 
 
+@sensitive_variables()
 def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
     if bucket and FailedAuthenticationAttempt.objects.is_locked_out(*bucket):

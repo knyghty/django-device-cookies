@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.http import HttpResponseBase
+from django.views.decorators.debug import sensitive_variables
 
 from . import config
 from .models import FailedAuthenticationAttempt
@@ -79,6 +80,7 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     return nonce
 
 
+@sensitive_variables()
 def get_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
 ) -> tuple[str, str] | None:
