@@ -4,6 +4,7 @@ import unicodedata
 from collections.abc import Mapping
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.core import signing
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,7 +16,7 @@ from . import config
 from .models import FailedAuthenticationAttempt
 
 SALT = "django_device_cookies"
-META_KEY = "DEVICE_COOKIE_USERNAME"
+META_KEY = "DEVICE_COOKIE_AUTH"
 MASK = "*" * 20
 
 
@@ -33,12 +34,11 @@ def get_username(credentials: Mapping[str, object]) -> str | None:
     return str(username)
 
 
-def get_canonical_username(username: str) -> str | None:
+def find_user(username: str) -> AbstractBaseUser | None:
     try:
-        user = get_user_model()._default_manager.get_by_natural_key(username)
+        return get_user_model()._default_manager.get_by_natural_key(username)
     except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
         return None
-    return str(user.get_username())
 
 
 def get_cookie_name(username: str) -> str:
@@ -52,18 +52,26 @@ def derive_nonce(secret: str) -> str:
     return hashlib.sha256(secret.encode()).hexdigest()[: config.NONCE_LENGTH]
 
 
-def get_device(
-    request: HttpRequest | None, username: str, canonical: str | None = None
-) -> str:
-    owner = canonical or username
-    cookie = request.COOKIES.get(get_cookie_name(owner)) if request else None
-    if not cookie:
+def build_payload(user: AbstractBaseUser, nonce: str | None = None) -> dict[str, str]:
+    return {
+        "u": str(user.get_username()),
+        "i": str(user.pk),
+        "n": nonce or secrets.token_hex(config.NONCE_LENGTH // 2),
+    }
+
+
+def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> str:
+    if request is None or user is None:
         return ""
+    cookie = request.COOKIES.get(get_cookie_name(user.get_username()), "")
     try:
         payload = signing.loads(cookie, salt=SALT, max_age=config.DEVICE_COOKIE_MAX_AGE)
     except signing.BadSignature:
         return ""
-    if not isinstance(payload, dict) or payload.get("u") not in (username, owner):
+    owner = {"u": user.get_username(), "i": str(user.pk)}
+    if not isinstance(payload, dict) or any(
+        payload.get(k) != v for k, v in owner.items()
+    ):
         return ""
     nonce = payload.get("n")
     if not isinstance(nonce, str) or len(nonce) != config.NONCE_LENGTH:
@@ -77,26 +85,24 @@ def get_bucket(
     username = get_username(credentials)
     if username is None:
         return None
-    canonical = get_canonical_username(username)
-    key = normalize_username(canonical or username)
-    device = get_device(request, username, canonical)
+    user = find_user(username)
+    key = normalize_username(user.get_username() if user else username)
+    device = get_device(request, user)
     if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
         device = ""
     return key, device
 
 
-def trust_device(request: HttpRequest, username: str, nonce: str | None = None) -> None:
-    request.META[META_KEY] = (username, nonce)
-
-
-def issue_device_cookie(
-    response: HttpResponseBase, username: str, nonce: str | None = None
+def trust_device(
+    request: HttpRequest, user: AbstractBaseUser, nonce: str | None = None
 ) -> None:
-    username = str(username)
-    nonce = nonce or secrets.token_hex(config.NONCE_LENGTH // 2)
+    request.META[META_KEY] = build_payload(user, nonce)
+
+
+def issue_device_cookie(response: HttpResponseBase, payload: dict[str, str]) -> None:
     response.set_cookie(
-        get_cookie_name(username),
-        signing.dumps({"u": username, "n": nonce}, salt=SALT),
+        get_cookie_name(payload["u"]),
+        signing.dumps(payload, salt=SALT),
         max_age=config.DEVICE_COOKIE_MAX_AGE,
         path=config.DEVICE_COOKIE_PATH,
         domain=config.DEVICE_COOKIE_DOMAIN,

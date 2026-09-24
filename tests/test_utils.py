@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import User
 from django.core import signing
 from django.http import HttpRequest
 from django.http import HttpResponse
@@ -7,6 +8,7 @@ from django.test import RequestFactory
 from django_device_cookies import utils
 
 from .helpers import COOKIE
+from .helpers import create_user
 from .helpers import read_payload
 
 pytestmark = pytest.mark.django_db
@@ -53,9 +55,9 @@ def test_get_bucket(
     assert utils.get_bucket(None, credentials) == expected
 
 
-def issue_cookie(username: str = "alice") -> str:
+def issue_cookie(user: User) -> str:
     response = HttpResponse()
-    utils.issue_device_cookie(response, username, None)
+    utils.issue_device_cookie(response, utils.build_payload(user))
     return response.cookies[COOKIE].value
 
 
@@ -66,53 +68,67 @@ def make_request(rf: RequestFactory, cookie: str | None = None) -> HttpRequest:
     return request
 
 
-def test_no_request() -> None:
-    assert utils.get_device(None, "alice") == ""
+def test_no_request(user: User) -> None:
+    assert utils.get_device(None, user) == ""
 
 
-def test_no_cookie(rf: RequestFactory) -> None:
-    assert utils.get_device(make_request(rf), "alice") == ""
+def test_no_user(rf: RequestFactory, user: User) -> None:
+    assert utils.get_device(make_request(rf, issue_cookie(user)), None) == ""
 
 
-def test_empty_cookie(rf: RequestFactory) -> None:
-    assert utils.get_device(make_request(rf, ""), "alice") == ""
+def test_no_cookie(rf: RequestFactory, user: User) -> None:
+    assert utils.get_device(make_request(rf), user) == ""
 
 
-def test_valid_cookie(rf: RequestFactory) -> None:
-    cookie = issue_cookie()
-    assert (
-        utils.get_device(make_request(rf, cookie), "alice") == read_payload(cookie)["n"]
-    )
+def test_empty_cookie(rf: RequestFactory, user: User) -> None:
+    assert utils.get_device(make_request(rf, ""), user) == ""
 
 
-def test_cookie_for_a_case_variant_is_untrusted(rf: RequestFactory) -> None:
-    assert utils.get_device(make_request(rf, issue_cookie("Alice")), "alice") == ""
+def test_valid_cookie(rf: RequestFactory, user: User) -> None:
+    cookie = issue_cookie(user)
+    assert utils.get_device(make_request(rf, cookie), user) == read_payload(cookie)["n"]
 
 
-def test_other_users_cookie(rf: RequestFactory) -> None:
-    assert utils.get_device(make_request(rf, issue_cookie("bob")), "alice") == ""
+def test_cookie_for_a_case_variant_is_untrusted(rf: RequestFactory, user: User) -> None:
+    cookie = issue_cookie(create_user("Alice"))
+    assert utils.get_device(make_request(rf, cookie), user) == ""
 
 
-def test_garbage(rf: RequestFactory) -> None:
-    assert utils.get_device(make_request(rf, "garbage"), "alice") == ""
+def test_other_users_cookie(rf: RequestFactory, user: User) -> None:
+    cookie = issue_cookie(create_user("bob"))
+    assert utils.get_device(make_request(rf, cookie), user) == ""
 
 
-def test_other_salt(rf: RequestFactory) -> None:
-    cookie = signing.dumps({"u": "alice", "n": "x" * 32})
-    assert utils.get_device(make_request(rf, cookie), "alice") == ""
+def test_cookie_for_a_deleted_account_is_untrusted(
+    rf: RequestFactory, user: User
+) -> None:
+    cookie = issue_cookie(user)
+    user.delete()
+    assert utils.get_device(make_request(rf, cookie), create_user("alice")) == ""
+
+
+def test_garbage(rf: RequestFactory, user: User) -> None:
+    assert utils.get_device(make_request(rf, "garbage"), user) == ""
+
+
+def test_other_salt(rf: RequestFactory, user: User) -> None:
+    cookie = signing.dumps(utils.build_payload(user))
+    assert utils.get_device(make_request(rf, cookie), user) == ""
 
 
 @pytest.mark.parametrize(
     "malformed",
     [
-        ["alice", "x" * 32],
+        ["alice", "1", "x" * 32],
         {"n": "x" * 32},
-        {"u": "alice", "n": 1},
-        {"u": "alice", "n": "short"},
+        {"u": "alice", "n": "x" * 32},
+        {"u": "alice", "i": "0", "n": "x" * 32},
+        {"u": "alice", "i": "1", "n": 1},
+        {"u": "alice", "i": "1", "n": "short"},
     ],
 )
 def test_malformed_payloads_are_untrusted(
-    rf: RequestFactory, malformed: object
+    rf: RequestFactory, user: User, malformed: object
 ) -> None:
     cookie = signing.dumps(malformed, salt=utils.SALT)
-    assert utils.get_device(make_request(rf, cookie), "alice") == ""
+    assert utils.get_device(make_request(rf, cookie), user) == ""

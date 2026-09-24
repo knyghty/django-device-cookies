@@ -11,5 +11,5 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     ) -> HttpResponse:
         token = self.request.session[auth_views.INTERNAL_RESET_SESSION_TOKEN]
         nonce = utils.derive_nonce(token)
-        utils.trust_device(request, self.user.get_username(), nonce)
+        utils.trust_device(request, self.user, nonce)
         return super().get(request, *args, **kwargs)

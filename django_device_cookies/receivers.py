@@ -20,7 +20,7 @@ def remember_login(
     **kwargs: object,
 ) -> None:
     if request is not None:
-        utils.trust_device(request, user.get_username())
+        utils.trust_device(request, user)
 
 
 @receiver(auth_signals.user_login_failed, dispatch_uid="django_device_cookies.failure")
