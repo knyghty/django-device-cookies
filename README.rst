@@ -100,8 +100,8 @@ Signals
 Maintenance
 -----------
 
-Expired failed attempts are not purged automatically. The
-``clear_device_cookie_attempts`` management command deletes them. Call it on a
+Expired failed attempts are not removed automatically. The
+``clear_device_cookie_attempts`` management command deletes them. Run it on a
 regular basis, for example as a daily cron job.
 
 Limitations
