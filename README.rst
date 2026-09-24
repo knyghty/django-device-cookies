@@ -112,8 +112,8 @@ Django's.
 The view renders the same template as Django's view,
 ``registration/password_reset_confirm.html``, and takes the same attributes,
 such as ``template_name``. The admin app ships a version of that template. To
-use your own, put a template at that path in a directory that Django searches
-before the admin's, such as one of the ``DIRS`` in your ``TEMPLATES`` setting.
+use your own, put a template at that path in one of the ``DIRS`` of your
+``TEMPLATES`` setting. Django searches those before the admin's templates.
 
 Other measures
 --------------
