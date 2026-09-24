@@ -59,9 +59,12 @@ failures over its life.
 Password reset
 --------------
 
-A valid password reset link gives a locked-out owner a device cookie. Route
-``django_device_cookies.views.PasswordResetConfirmView`` before
-``include("django.contrib.auth.urls")``:
+An attacker can keep the untrusted lockout for an account in place, which
+blocks its user from logging in from a new device. OWASP suggests issuing a
+device cookie when the user visits a password reset link, since that proves
+possession of the email account. An actual password reset is not necessary.
+``django_device_cookies.views.PasswordResetConfirmView`` does this. Add it to
+your URLs before ``include("django.contrib.auth.urls")``:
 
 .. code-block:: python
 
