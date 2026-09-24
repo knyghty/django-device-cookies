@@ -1,9 +1,10 @@
 import datetime
 import inspect
-import string
 from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Sequence
+from http.cookies import CookieError
+from http.cookies import SimpleCookie
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -139,11 +140,14 @@ def is_nonempty_str(value: object) -> bool:
     return isinstance(value, str) and value != ""
 
 
-TOKEN_CHARACTERS = frozenset(string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~")
-
-
 def is_cookie_name(value: object) -> bool:
-    return isinstance(value, str) and value != "" and set(value) <= TOKEN_CHARACTERS
+    if not isinstance(value, str):
+        return False
+    try:
+        SimpleCookie()[value] = ""
+    except CookieError:
+        return False
+    return True
 
 
 def is_positive_int(value: object) -> bool:

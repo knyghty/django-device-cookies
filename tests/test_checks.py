@@ -104,6 +104,8 @@ def test_secure_off_is_a_deployment_warning(settings: Settings) -> None:
     [
         ("DEVICE_COOKIE_NAME", ""),
         ("DEVICE_COOKIE_NAME", "device cookie"),
+        ("DEVICE_COOKIE_NAME", "path"),
+        ("DEVICE_COOKIE_NAME", "Max-Age"),
         ("DEVICE_COOKIE_PATH", ""),
         ("DEVICE_COOKIE_PERIOD", 3600),
         ("DEVICE_COOKIE_PERIOD", datetime.timedelta(0)),
