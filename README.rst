@@ -73,8 +73,8 @@ delete the user's attempts in the admin.
 Limitations
 -----------
 
-- Only calls to ``authenticate()`` are throttled. Calls without a request
-  count as untrusted.
+- Only calls to ``authenticate()`` and ``aauthenticate()`` are throttled. Calls
+  without a request count as untrusted.
 - An attacker who has a device cookie can delete it and get the limit again as
   an unknown browser.
 - Attempts sent in parallel can exceed the limit.
