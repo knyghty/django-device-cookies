@@ -10,11 +10,13 @@ passwords. That locks out an attacker, but not the owner's known browsers.
 Why
 ---
 
-An account lockout lets anyone lock you out of your own account by typing the
-wrong password a few times. An IP lockout is easy to avoid with more addresses
-and catches everyone behind a shared one. Device cookies only lock out browsers
-that have never logged in to the account. The attacker is blocked and you are
-not.
+The usual options are to lock the account or the IP address after a few
+failures. If you lock the account, an attacker can keep it locked by sending
+wrong passwords, and the person who owns it can't get in either. If you lock
+the IP, you hit everyone who shares it, and an attacker with a list of proxies
+isn't slowed down at all. A device cookie marks a browser that has already
+logged in to an account. Those browsers are exempt from the lockout, and every
+other browser is throttled per account.
 
 Installation
 ------------
