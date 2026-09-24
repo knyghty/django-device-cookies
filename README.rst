@@ -100,8 +100,9 @@ Signals
 Maintenance
 -----------
 
-Run ``manage.py clear_device_cookie_attempts`` on a schedule. To lift a
-lockout, delete the user's attempts in the admin.
+Every failed attempt adds a row to the database, and nothing removes them.
+``manage.py clear_device_cookie_attempts`` deletes the rows that are older
+than ``DEVICE_COOKIE_PERIOD`` and no longer count. Run it on a schedule.
 
 Limitations
 -----------
