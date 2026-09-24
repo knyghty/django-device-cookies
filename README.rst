@@ -80,6 +80,6 @@ Limitations
 - Attempts sent in parallel can exceed the limit.
 - One password tried against many accounts is not throttled.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
-  calls that pass it by name are not throttled. A system check warns.
+  calls that pass it by name are not throttled.
 
 .. _`device cookies`: https://owasp.org/www-community/Slow_Down_Online_Guessing_Attacks_with_Device_Cookies
