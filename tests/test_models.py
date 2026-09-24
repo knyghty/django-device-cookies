@@ -2,6 +2,7 @@ import pytest
 from django.utils import timezone
 
 from django_device_cookies.models import FailedAuthenticationAttempt
+from django_device_cookies.models import hash_username
 
 from .helpers import LIMIT
 from .helpers import create_stale
@@ -12,8 +13,8 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(("device", "label"), [("", "untrusted"), ("abc", "abc")])
 def test_str(device: str, label: str) -> None:
     now = timezone.now()
-    attempt = FailedAuthenticationAttempt(username="alice", device=device, time=now)
-    assert str(attempt) == f"alice ({label}) at {now}"
+    attempt = FailedAuthenticationAttempt(key="abc123", device=device, time=now)
+    assert str(attempt) == f"abc123 ({label}) at {now}"
 
 
 def test_record_failure_reports_the_failure_that_locks() -> None:
@@ -37,5 +38,5 @@ def test_buckets_are_independent() -> None:
 
 def test_stale_attempts_do_not_count() -> None:
     for _ in range(LIMIT):
-        create_stale(username="alice")
+        create_stale(key=hash_username("alice"))
     assert not FailedAuthenticationAttempt.objects.is_locked_out("alice", "")

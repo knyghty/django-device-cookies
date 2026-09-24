@@ -25,6 +25,7 @@ from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
 from django_device_cookies.models import NONCE_LENGTH
 from django_device_cookies.models import FailedAuthenticationAttempt
+from django_device_cookies.models import hash_username
 from django_device_cookies.signals import lockout
 
 from .helpers import COMBINED
@@ -51,8 +52,11 @@ def backends(request: pytest.FixtureRequest, settings: Settings) -> None:
     settings.AUTHENTICATION_BACKENDS = request.param
 
 
-def count_attempts(**filters: str) -> int:
-    return FailedAuthenticationAttempt.objects.filter(**filters).count()
+def count_attempts(username: str | None = None, **filters: str) -> int:
+    queryset = FailedAuthenticationAttempt.objects.filter(**filters)
+    if username is not None:
+        queryset = queryset.filter(key=hash_username(username))
+    return queryset.count()
 
 
 def test_failures_below_the_limit_do_not_lock(client: Client, user: User) -> None:

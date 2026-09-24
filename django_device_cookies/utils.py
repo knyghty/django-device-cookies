@@ -15,8 +15,8 @@ from django.views.decorators.debug import sensitive_variables
 
 from . import config
 from .models import NONCE_LENGTH
-from .models import USERNAME_LENGTH
 from .models import FailedAuthenticationAttempt
+from .models import hash_username
 
 SALT = "django_device_cookies"
 META_KEY = "DEVICE_COOKIE_AUTH"
@@ -25,8 +25,7 @@ MASK = "*" * 20
 
 
 def normalize_username(username: object) -> str:
-    normalized = unicodedata.normalize("NFKC", str(username)).casefold()
-    return normalized[:USERNAME_LENGTH]
+    return unicodedata.normalize("NFKC", str(username)).casefold()
 
 
 def get_username(credentials: Mapping[str, object]) -> str | None:
@@ -48,7 +47,7 @@ def find_user(username: str) -> AbstractBaseUser | None:
 def get_cookie_name(username: str) -> str:
     if not config.DEVICE_COOKIE_PER_USER:
         return config.DEVICE_COOKIE_NAME
-    digest = hashlib.sha256(normalize_username(username).encode()).hexdigest()[:16]
+    digest = hash_username(normalize_username(username))[:16]
     return f"{config.DEVICE_COOKIE_NAME}_{digest}"
 
 

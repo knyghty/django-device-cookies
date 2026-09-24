@@ -21,7 +21,6 @@ pytestmark = pytest.mark.django_db
         ("ﬁsh", "fish"),
         ("Straße", "strasse"),
         (123, "123"),
-        ("a" * 300, "a" * 255),
     ],
 )
 def test_normalize_username(username: object, expected: str) -> None:
@@ -45,7 +44,7 @@ def test_get_username(credentials: dict[str, object], expected: str | None) -> N
     ("credentials", "expected"),
     [
         ({"username": "Alice"}, ("alice", "")),
-        ({"username": "a" * 300}, ("a" * 255, "")),
+        ({"username": "a" * 300}, ("a" * 300, "")),
         ({}, None),
     ],
 )

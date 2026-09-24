@@ -17,12 +17,12 @@ def clear(**options: object) -> str:
 
 
 def test_deletes_only_stale_attempts() -> None:
-    create_stale(username="alice")
-    fresh = FailedAuthenticationAttempt.objects.create(username="alice")
+    create_stale(key="abc")
+    fresh = FailedAuthenticationAttempt.objects.create(key="abc")
     assert clear() == "Deleted 1 failed authentication attempt.\n"
     assert list(FailedAuthenticationAttempt.objects.all()) == [fresh]
 
 
 def test_quiet() -> None:
-    create_stale(username="alice")
+    create_stale(key="abc")
     assert clear(verbosity=0) == ""
