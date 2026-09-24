@@ -28,7 +28,7 @@ Installation
    ``MIDDLEWARE``.
 3. Set ``AUTHENTICATION_BACKENDS`` to
    ``["django_device_cookies.backends.DeviceCookieModelBackend"]``.
-4. Run ``manage.py migrate django_device_cookies``.
+4. Run ``manage.py migrate``.
 
 If your project uses other backends, put
 ``"django_device_cookies.backends.DeviceCookieBackend"`` first instead.
