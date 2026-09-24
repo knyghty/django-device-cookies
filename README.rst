@@ -32,8 +32,8 @@ Installation
 
 ``django_device_cookies.backends.DeviceCookieModelBackend`` is ``ModelBackend``
 with the throttle built in, for projects that want a single entry. Django
-stores the path of the backend that authenticated a user in the session, so
-replacing ``ModelBackend`` with it logs out every existing session.
+stores the path of the backend that authenticated a user in the session.
+Replacing ``ModelBackend`` with it logs out every existing session.
 
 Settings
 --------
