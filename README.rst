@@ -10,12 +10,11 @@ passwords. That locks out an attacker, but not the owner's known browsers.
 Why
 ---
 
-Most login throttles lock either the account or the IP address. Lock the
-account and an attacker can lock the real user out whenever they like, just by
-failing on purpose. Lock the IP and you block a whole office or mobile carrier
-while an attacker with a botnet carries on. Device cookies get around both: a
-browser that has logged in before keeps working, and everyone else is
-throttled per account.
+An account lockout lets anyone lock you out of your own account by typing the
+wrong password a few times. An IP lockout is easy to avoid with more addresses
+and catches everyone behind a shared one. Device cookies only lock out browsers
+that have never logged in to the account. The attacker is blocked and you are
+not.
 
 Installation
 ------------
