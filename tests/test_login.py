@@ -22,6 +22,7 @@ from django.urls import reverse
 from pytest_django.fixtures import Settings
 
 from django_device_cookies import config
+from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.signals import lockout
@@ -266,19 +267,51 @@ def test_username_field_credential_is_gated(user: User, rf: RequestFactory) -> N
     assert count_attempts(username="alice@example.com", device="") == LIMIT
 
 
-def test_masked_username_field_records_nothing(
-    user: User, rf: RequestFactory, caplog: pytest.LogCaptureFixture
+def test_masked_username_field_is_throttled_with_a_request(
+    user: User, rf: RequestFactory
+) -> None:
+    request = rf.get("/")
+    with (
+        mock.patch.object(get_user_model(), "USERNAME_FIELD", "api_key"),
+        mock.patch.object(User, "get_username", get_plain_username),
+        mock.patch.object(UserManager, "get_by_natural_key", by_username),
+    ):
+        for _ in range(LIMIT + 2):
+            authenticate(request, api_key="alice", password="wrong")
+        assert authenticate(request, api_key="alice", password=PASSWORD) is None
+    assert count_attempts(username="alice", device="") == LIMIT
+
+
+def by_username(manager: UserManager, username: str) -> User:
+    return manager.get(username=username)
+
+
+def get_plain_username(user: User) -> str:
+    return str(user.username)
+
+
+def test_masked_username_field_records_nothing_without_a_request(
+    user: User, caplog: pytest.LogCaptureFixture
 ) -> None:
     caplog.set_level(logging.WARNING, logger="django_device_cookies")
-    request = rf.get("/")
     with mock.patch.object(get_user_model(), "USERNAME_FIELD", "api_key"):
         credentials = _clean_credentials({"api_key": "alice", "password": "wrong"})
         for _ in range(LIMIT + 2):
-            user_login_failed.send(
-                sender=None, credentials=credentials, request=request
-            )
+            user_login_failed.send(sender=None, credentials=credentials)
     assert count_attempts() == 0
     assert caplog.messages == []
+
+
+def test_stale_stash_is_ignored_for_another_username(
+    user: User, rf: RequestFactory
+) -> None:
+    request = rf.get("/")
+    utils.stash_bucket(request, {"username": "alice"}, ("alice", "x" * 32))
+    user_login_failed.send(
+        sender=None, credentials={"username": "bob"}, request=request
+    )
+    assert count_attempts(username="bob", device="") == 1
+    assert count_attempts(username="alice") == 0
 
 
 def test_async_authenticate_is_gated(user: User, rf: RequestFactory) -> None:

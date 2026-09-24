@@ -102,6 +102,7 @@ def test_secure_off_is_a_deployment_warning(settings: Settings) -> None:
 @pytest.mark.parametrize(
     ("name", "value"),
     [
+        ("DEVICE_COOKIE_NAME", 1),
         ("DEVICE_COOKIE_NAME", ""),
         ("DEVICE_COOKIE_NAME", "device cookie"),
         ("DEVICE_COOKIE_NAME", "path"),

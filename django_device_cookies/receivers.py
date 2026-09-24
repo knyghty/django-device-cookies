@@ -30,7 +30,7 @@ def record_failure(
     request: HttpRequest | None = None,
     **kwargs: object,
 ) -> None:
-    bucket = utils.get_bucket(request, credentials)
+    bucket = utils.pop_bucket(request, credentials)
     if bucket is None:
         return
     username, device = bucket

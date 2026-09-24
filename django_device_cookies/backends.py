@@ -21,6 +21,7 @@ def hash_password(credentials: dict[str, object]) -> None:
 @sensitive_variables()
 def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
+    utils.stash_bucket(request, credentials, bucket)
     if bucket and FailedAuthenticationAttempt.objects.is_locked_out(*bucket):
         hash_password(credentials)
         raise PermissionDenied

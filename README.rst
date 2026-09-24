@@ -111,7 +111,7 @@ Limitations
   without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
-  calls that pass it by name are not throttled.
+  the throttle ignores calls without a request that pass it by name.
 
 System checks
 -------------
@@ -127,8 +127,8 @@ System checks
 * **device_cookies.E004**: Browsers reject a ``SameSite=None`` cookie that is
   not ``Secure``. No client gets a device cookie.
 * **device_cookies.W003**: Django masks ``USERNAME_FIELD`` ``<field>`` in the
-  ``user_login_failed`` signal. The throttle ignores callers that pass it to
-  ``authenticate()`` by name.
+  ``user_login_failed`` signal. The throttle ignores calls to
+  ``authenticate()`` without a request that pass it by name.
 
 The following check is run with the ``--deploy`` option:
 

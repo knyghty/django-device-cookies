@@ -18,6 +18,7 @@ from .models import FailedAuthenticationAttempt
 
 SALT = "django_device_cookies"
 META_KEY = "DEVICE_COOKIE_AUTH"
+BUCKET_KEY = "DEVICE_COOKIE_AUTH_BUCKET"
 MASK = "*" * 20
 
 
@@ -93,6 +94,25 @@ def get_bucket(
     if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
         device = ""
     return key, device
+
+
+def stash_bucket(
+    request: HttpRequest | None,
+    credentials: Mapping[str, object],
+    bucket: tuple[str, str] | None,
+) -> None:
+    if request is not None and bucket is not None:
+        request.META[BUCKET_KEY] = (get_username(credentials), bucket)
+
+
+@sensitive_variables()
+def pop_bucket(
+    request: HttpRequest | None, credentials: Mapping[str, object]
+) -> tuple[str, str] | None:
+    stash = request.META.pop(BUCKET_KEY, None) if request is not None else None
+    if stash is not None and get_username(credentials) in (None, stash[0]):
+        return stash[1]
+    return get_bucket(request, credentials)
 
 
 def trust_device(
