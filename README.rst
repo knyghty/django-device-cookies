@@ -7,6 +7,14 @@ cookie, and failed attempts count per cookie, or per username for requests
 without a valid one. After the limit, the backend rejects attempts like wrong
 passwords. That locks out an attacker, but not the owner's known browsers.
 
+Why
+---
+
+Locking an account after failed attempts lets an attacker lock the owner out
+on purpose. Locking an IP address does not stop an attacker with many
+addresses, and it locks out everyone behind a shared one. Device cookies lock
+out unknown browsers per account and leave the owner's known browsers alone.
+
 Installation
 ------------
 
