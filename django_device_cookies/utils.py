@@ -96,6 +96,7 @@ def get_bucket(
     return key, device
 
 
+@sensitive_variables()
 def stash_bucket(
     request: HttpRequest | None,
     credentials: Mapping[str, object],
