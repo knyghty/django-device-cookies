@@ -77,7 +77,7 @@ Limitations
   count as untrusted.
 - An attacker who has a device cookie can delete it and get the limit again as
   an unknown browser.
-- Simultaneous requests can all get through before a failure is recorded.
+- Attempts sent in parallel can exceed the limit.
 - One password tried against many accounts is not throttled.
 - The database keeps every submitted username in plain text.
 - Every ``login()`` call sets a cookie, including staff impersonation.
