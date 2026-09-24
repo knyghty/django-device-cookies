@@ -100,9 +100,9 @@ Signals
 Maintenance
 -----------
 
-Every failed attempt adds a row to the database, and nothing removes them.
-``manage.py clear_device_cookie_attempts`` deletes the rows that are older
-than ``DEVICE_COOKIE_PERIOD`` and no longer count. Run it on a schedule.
+Expired failed attempts are not purged automatically. The
+``clear_device_cookie_attempts`` management command deletes them. Call it on a
+regular basis, for example as a daily cron job.
 
 Limitations
 -----------
