@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.contrib.admin import AdminSite
+from django.contrib.auth import get_user_model
+from django.db.models import Model
 from django.db.models import Q
 from django.db.models import QuerySet
 from django.http import HttpRequest
@@ -13,7 +16,12 @@ class FailedAuthenticationAttemptAdmin(admin.ModelAdmin):
     list_display = ["key", "device", "time"]
     ordering = ["-time"]
     search_fields = ["key"]
-    search_help_text = "Enter a username or a key."
+
+    def __init__(self, model: type[Model], admin_site: AdminSite) -> None:
+        super().__init__(model, admin_site)
+        user_model = get_user_model()
+        field = user_model._meta.get_field(user_model.USERNAME_FIELD)
+        self.search_help_text = f"Enter the {field.verbose_name} or a key."
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet, search_term: str
