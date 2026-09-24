@@ -31,8 +31,7 @@ Installation
 4. Run ``migrate``.
 
 If your project uses other backends, put
-``"django_device_cookies.backends.DeviceCookieBackend"`` first instead. System
-checks report mistakes.
+``"django_device_cookies.backends.DeviceCookieBackend"`` first instead.
 
 Settings
 --------
@@ -94,5 +93,27 @@ Limitations
 - Attempts sent in parallel can exceed the limit.
 - If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
   calls that pass it by name are not throttled.
+
+System checks
+-------------
+
+* **device_cookies.E001**: ``AUTHENTICATION_BACKENDS`` has no device cookie
+  backend. Nothing throttles logins.
+* **device_cookies.W001**: The device cookie backend is not first in
+  ``AUTHENTICATION_BACKENDS``. A locked-out client that knows the password
+  still logs in.
+* **device_cookies.E002**: ``MIDDLEWARE`` has no device cookie middleware. No
+  client gets a device cookie, and every login attempt counts as untrusted.
+* **device_cookies.E003**: ``<setting>`` must be ``<expected>``.
+* **device_cookies.E004**: Browsers reject a ``SameSite=None`` cookie that is
+  not ``Secure``. No client gets a device cookie.
+* **device_cookies.W003**: Django masks ``USERNAME_FIELD`` ``<field>`` in the
+  ``user_login_failed`` signal. The throttle ignores callers that pass it to
+  ``authenticate()`` by name.
+
+The following check is run with the ``--deploy`` option:
+
+* **device_cookies.W002**: ``DEVICE_COOKIE_SECURE`` is off. Browsers send
+  device cookies over HTTP.
 
 .. _`device cookies`: https://owasp.org/www-community/Slow_Down_Online_Guessing_Attacks_with_Device_Cookies
