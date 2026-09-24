@@ -36,21 +36,19 @@ def test_no_cookie_after_a_failed_login(client: Client, user: User) -> None:
     assert COOKIE not in attempt(client).cookies
 
 
-def test_login_through_a_request_wrapper_issues_a_cookie(
-    client: Client, user: User
+@pytest.mark.parametrize(
+    "url",
+    ["login-wrapped", "login-logout"],
+    ids=["request wrapper", "login then logout"],
+)
+def test_login_issues_a_cookie_for_the_user(
+    client: Client, user: User, url: str
 ) -> None:
-    response = login(client, url="login-wrapped")
+    response = login(client, url=url)
     assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"
 
 
 def test_async_request_issues_a_cookie(async_client: AsyncClient, user: User) -> None:
     data = {"username": "alice", "password": PASSWORD}
     response = async_to_sync(async_client.post)(reverse("login"), data)
-    assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"
-
-
-def test_login_then_logout_issues_for_the_user_who_logged_in(
-    client: Client, user: User
-) -> None:
-    response = login(client, url="login-logout")
     assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"

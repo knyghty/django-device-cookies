@@ -71,15 +71,10 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
         payload = signing.loads(cookie, salt=SALT, max_age=config.DEVICE_COOKIE_MAX_AGE)
     except signing.BadSignature:
         return ""
-    owner = {"u": user.get_username(), "i": str(user.pk)}
-    if not isinstance(payload, dict) or any(
-        payload.get(k) != v for k, v in owner.items()
-    ):
-        return ""
-    nonce = payload.get("n")
+    nonce = payload.get("n") if isinstance(payload, dict) else None
     if not isinstance(nonce, str) or len(nonce) != NONCE_LENGTH:
         return ""
-    return nonce
+    return nonce if payload == build_payload(user, nonce) else ""
 
 
 @sensitive_variables()

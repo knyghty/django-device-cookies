@@ -1,8 +1,8 @@
 from asgiref.sync import sync_to_async
 from django.contrib import auth
-from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.views.decorators.debug import sensitive_variables
@@ -15,7 +15,7 @@ from .models import FailedAuthenticationAttempt
 def hash_password(credentials: dict[str, object]) -> None:
     password = credentials.get("password")
     if isinstance(password, str):
-        get_user_model()().set_password(password)
+        make_password(password)
 
 
 @sensitive_variables()
@@ -63,5 +63,4 @@ class DeviceCookieModelBackend(ModelBackend):
     async def aauthenticate(
         self, request: HttpRequest | None, **credentials: object
     ) -> AbstractBaseUser | None:
-        await sync_to_async(gate)(request, credentials)
-        return await super().aauthenticate(request, **credentials)
+        return await sync_to_async(self.authenticate)(request, **credentials)

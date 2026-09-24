@@ -88,13 +88,9 @@ def test_valid_cookie(rf: RequestFactory, user: User) -> None:
     assert utils.get_device(make_request(rf, cookie), user) == read_payload(cookie)["n"]
 
 
-def test_cookie_for_a_case_variant_is_untrusted(rf: RequestFactory, user: User) -> None:
-    cookie = issue_cookie(create_user("Alice"))
-    assert utils.get_device(make_request(rf, cookie), user) == ""
-
-
-def test_other_users_cookie(rf: RequestFactory, user: User) -> None:
-    cookie = issue_cookie(create_user("bob"))
+@pytest.mark.parametrize("other", ["bob", "Alice"])
+def test_another_accounts_cookie(rf: RequestFactory, user: User, other: str) -> None:
+    cookie = issue_cookie(create_user(other))
     assert utils.get_device(make_request(rf, cookie), user) == ""
 
 

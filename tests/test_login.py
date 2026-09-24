@@ -82,12 +82,10 @@ def test_lockout_lifts_one_slot_at_a_time(client: Client, user: User) -> None:
 
 def test_locked_attempt_hashes_the_password(client: Client, user: User) -> None:
     fail(client)
-    with mock.patch("django_device_cookies.backends.get_user_model") as get_model:
+    with mock.patch("django_device_cookies.backends.make_password") as hasher:
         attempt(client, password="wrong again")
         authenticate(username="alice")
-    get_model.return_value.return_value.set_password.assert_called_once_with(
-        "wrong again"
-    )
+    hasher.assert_called_once_with("wrong again")
 
 
 def test_attempts_during_lockout_are_not_recorded(client: Client, user: User) -> None:
@@ -177,21 +175,13 @@ def test_tampered_cookie_is_untrusted(client: Client, trusted: Client) -> None:
     assert logged_in(login(trusted))
 
 
-def test_another_users_cookie_is_untrusted(client: Client, user: User) -> None:
-    create_user("bob")
-    bobs = Client()
-    login(bobs, "bob")
-    fail(client)
-    client.cookies[COOKIE] = bobs.cookies[COOKIE].value
-    assert not logged_in(login(client))
-
-
-def test_cookie_for_an_account_with_a_merging_name_is_untrusted(
-    client: Client, user: User
+@pytest.mark.parametrize("other", ["bob", "ALICE"], ids=["other user", "merging name"])
+def test_another_accounts_cookie_is_untrusted(
+    client: Client, user: User, other: str
 ) -> None:
-    create_user("ALICE")
+    create_user(other)
     impostor = Client()
-    login(impostor, "ALICE")
+    login(impostor, other)
     fail(client)
     client.cookies[COOKIE] = impostor.cookies[COOKIE].value
     assert not logged_in(login(client))

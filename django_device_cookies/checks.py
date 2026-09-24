@@ -1,5 +1,4 @@
 import datetime
-import inspect
 from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Sequence
@@ -18,25 +17,15 @@ from .backends import DeviceCookieModelBackend
 from .middleware import DeviceCookieMiddleware
 
 
-def load_class(path: str) -> type | None:
+def matches(path: str, classes: type | tuple[type, ...]) -> bool:
     try:
-        obj = import_string(path)
-    except ImportError:
-        return None
-    return obj if inspect.isclass(obj) else None
+        return issubclass(import_string(path), classes)
+    except (ImportError, TypeError):
+        return False
 
 
 def find_first(paths: Iterable[str], classes: type | tuple[type, ...]) -> int | None:
-    for index, path in enumerate(paths):
-        cls = load_class(path)
-        if cls is not None and issubclass(cls, classes):
-            return index
-    return None
-
-
-def is_gate(path: str) -> bool:
-    cls = load_class(path)
-    return cls is not None and issubclass(cls, DeviceCookieBackend)
+    return next((i for i, path in enumerate(paths) if matches(path, classes)), None)
 
 
 @checks.register(checks.Tags.security)
@@ -64,7 +53,7 @@ def check_backend(
                 id="device_cookies.W001",
             )
         ]
-    if all(is_gate(path) for path in settings.AUTHENTICATION_BACKENDS):
+    if all(matches(p, DeviceCookieBackend) for p in settings.AUTHENTICATION_BACKENDS):
         return [
             checks.Error(
                 "AUTHENTICATION_BACKENDS has only the device cookie backend. Nothing "
