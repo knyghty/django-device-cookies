@@ -10,12 +10,23 @@ from . import utils
 from .models import FailedAuthenticationAttempt
 
 
+def hash_password(credentials: dict[str, object]) -> None:
+    password = credentials.get("password")
+    if isinstance(password, str):
+        get_user_model()().set_password(password)
+
+
 def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
     if bucket and FailedAuthenticationAttempt.objects.is_locked_out(*bucket):
-        password = credentials.get("password")
-        if isinstance(password, str):
-            get_user_model()().set_password(password)
+        hash_password(credentials)
+        raise PermissionDenied
+
+
+async def agate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
+    bucket = await utils.aget_bucket(request, credentials)
+    if bucket and await FailedAuthenticationAttempt.objects.ais_locked_out(*bucket):
+        await sync_to_async(hash_password, thread_sensitive=False)(credentials)
         raise PermissionDenied
 
 
@@ -28,7 +39,7 @@ class DeviceCookieBackend:
     async def aauthenticate(
         self, request: HttpRequest | None, **credentials: object
     ) -> None:
-        return await sync_to_async(self.authenticate)(request, **credentials)
+        await agate(request, credentials)
 
 
 class DeviceCookieModelBackend(ModelBackend):
@@ -43,5 +54,5 @@ class DeviceCookieModelBackend(ModelBackend):
     async def aauthenticate(
         self, request: HttpRequest | None, **credentials: object
     ) -> AbstractBaseUser | None:
-        await sync_to_async(gate)(request, credentials)
+        await agate(request, credentials)
         return await super().aauthenticate(request, **credentials)

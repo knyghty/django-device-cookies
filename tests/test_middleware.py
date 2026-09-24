@@ -1,12 +1,15 @@
 from http import HTTPStatus
 
 import pytest
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
+from django.test import AsyncClient
 from django.test import Client
 from django.urls import reverse
 from pytest_django.fixtures import Settings
 
 from .helpers import COOKIE
+from .helpers import PASSWORD
 from .helpers import attempt
 from .helpers import login
 from .helpers import read_payload
@@ -37,6 +40,12 @@ def test_login_through_a_request_wrapper_issues_a_cookie(
     client: Client, user: User
 ) -> None:
     response = login(client, url="login-wrapped")
+    assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"
+
+
+def test_async_request_issues_a_cookie(async_client: AsyncClient, user: User) -> None:
+    data = {"username": "alice", "password": PASSWORD}
+    response = async_to_sync(async_client.post)(reverse("login"), data)
     assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"
 
 

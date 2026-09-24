@@ -27,11 +27,22 @@ class FailedAuthenticationAttemptQuerySet(models.QuerySet):
         count = self.filter_recent(username, device).count()
         return count >= config.DEVICE_COOKIE_ATTEMPTS_PER_PERIOD
 
+    async def ais_locked_out(self, username: str, device: str) -> bool:
+        count = await self.filter_recent(username, device).acount()
+        return count >= config.DEVICE_COOKIE_ATTEMPTS_PER_PERIOD
+
     def is_revoked(self, username: str, device: str) -> bool:
         limit = config.DEVICE_COOKIE_REVOKE_AFTER_FAILURES
         if not limit:
             return False
         return self.filter(username=username, device=device).count() >= limit
+
+    async def ais_revoked(self, username: str, device: str) -> bool:
+        limit = config.DEVICE_COOKIE_REVOKE_AFTER_FAILURES
+        if not limit:
+            return False
+        count = await self.filter(username=username, device=device).acount()
+        return count >= limit
 
     def record_failure(self, username: str, device: str) -> bool:
         if self.is_locked_out(username, device):

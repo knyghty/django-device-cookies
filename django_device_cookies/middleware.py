@@ -13,3 +13,6 @@ class DeviceCookieMiddleware(MiddlewareMixin):
         if trusted is not None:
             utils.issue_device_cookie(response, *trusted)
         return response
+
+    async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
+        return self.process_response(request, await self.get_response(request))

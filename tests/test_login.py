@@ -285,6 +285,22 @@ def test_async_authenticate_is_gated(user: User, rf: RequestFactory) -> None:
     assert async_to_sync(aauthenticate)(request, **credentials) == user
     fail(Client())
     assert async_to_sync(aauthenticate)(request, **credentials) is None
+    assert async_to_sync(aauthenticate)(request, token="abc") is None
+    assert async_to_sync(aauthenticate)(request, username="nobody") is None
+    assert count_attempts(username="nobody", device="") == 1
+
+
+def test_async_authenticate_trusts_a_device(
+    trusted: Client, rf: RequestFactory, settings: Settings
+) -> None:
+    request = rf.get("/")
+    request.COOKIES[COOKIE] = trusted.cookies[COOKIE].value
+    credentials = {"username": "alice", "password": PASSWORD}
+    fail(Client())
+    assert async_to_sync(aauthenticate)(request, **credentials) is not None
+    settings.DEVICE_COOKIE_REVOKE_AFTER_FAILURES = 1
+    fail(trusted, 1)
+    assert async_to_sync(aauthenticate)(request, **credentials) is None
 
 
 def test_signals_without_a_request(user: User) -> None:
