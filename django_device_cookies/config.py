@@ -1,5 +1,3 @@
-"""Read package settings at use time so ``override_settings`` applies."""
-
 import datetime
 
 from django.conf import settings

@@ -6,8 +6,6 @@ from . import utils
 
 
 class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
-    """Derive the nonce from the token, so one link stays one device when reopened."""
-
     def get(
         self, request: HttpRequest, *args: object, **kwargs: object
     ) -> HttpResponse:

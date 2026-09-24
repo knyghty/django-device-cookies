@@ -25,7 +25,6 @@ def normalize_username(username: object) -> str:
 
 
 def get_username(credentials: Mapping[str, object]) -> str | None:
-    """Return None for a value that Django masked in ``user_login_failed``."""
     username = credentials.get("username")
     if username is None:
         username = credentials.get(get_user_model().USERNAME_FIELD)
@@ -75,7 +74,6 @@ def get_device(
 def get_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
 ) -> tuple[str, str] | None:
-    """Key the bucket by the account, so spellings the database equates share it."""
     username = get_username(credentials)
     if username is None:
         return None
@@ -88,7 +86,6 @@ def get_bucket(
 
 
 def trust_device(request: HttpRequest, username: str, nonce: str | None = None) -> None:
-    """Use ``META``, not an attribute: REST framework's request proxies reads only."""
     request.META[META_KEY] = (username, nonce)
 
 

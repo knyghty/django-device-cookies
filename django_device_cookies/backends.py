@@ -20,8 +20,6 @@ def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
 
 
 class DeviceCookieBackend:
-    """Do not add ``get_user``: ``force_login()`` picks the first backend with it."""
-
     @sensitive_variables("credentials")
     def authenticate(self, request: HttpRequest | None, **credentials: object) -> None:
         gate(request, credentials)
