@@ -77,13 +77,31 @@ your URLs before ``include("django.contrib.auth.urls")``:
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
 
-Operation
----------
+Signals
+-------
 
-Each lockout logs a warning and sends
-``django_device_cookies.signals.lockout``. Run
-``manage.py clear_device_cookie_attempts`` on a schedule. To lift a lockout,
-delete the user's attempts in the admin.
+``django_device_cookies.signals.lockout``
+    Sent when an account or a device reaches the failed attempt limit.
+
+    Arguments sent with this signal:
+
+    ``sender``
+        The ``FailedAuthenticationAttempt`` class.
+
+    ``username``
+        The normalized username.
+
+    ``device``
+        The device cookie nonce, or ``""`` for untrusted clients.
+
+    ``request``
+        The current ``HttpRequest``, or ``None``.
+
+Maintenance
+-----------
+
+Run ``manage.py clear_device_cookie_attempts`` on a schedule. To lift a
+lockout, delete the user's attempts in the admin.
 
 Limitations
 -----------
