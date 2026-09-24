@@ -79,8 +79,7 @@ Limitations
   an unknown browser.
 - Attempts sent in parallel can exceed the limit.
 - One password tried against many accounts is not throttled.
-- Django masks a ``USERNAME_FIELD`` that contains ``api``, ``token``, ``key``,
-  ``secret``, ``password`` or ``signature``. The throttle ignores callers that
-  pass such a field by name. A system check warns.
+- If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
+  calls that pass it by name are not throttled. A system check warns.
 
 .. _`device cookies`: https://owasp.org/www-community/Slow_Down_Online_Guessing_Attacks_with_Device_Cookies
