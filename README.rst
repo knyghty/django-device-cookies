@@ -10,10 +10,12 @@ passwords. That locks out an attacker, but not the owner's known browsers.
 Why
 ---
 
-Locking an account after failed attempts lets an attacker lock the owner out
-on purpose. Locking an IP address does not stop an attacker with many
-addresses, and it locks out everyone behind a shared one. Device cookies lock
-out unknown browsers per account and leave the owner's known browsers alone.
+Most login throttles lock either the account or the IP address. Lock the
+account and an attacker can lock the real user out whenever they like, just by
+failing on purpose. Lock the IP and you block a whole office or mobile carrier
+while an attacker with a botnet carries on. Device cookies get around both: a
+browser that has logged in before keeps working, and everyone else is
+throttled per account.
 
 Installation
 ------------
