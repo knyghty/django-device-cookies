@@ -4,19 +4,21 @@ Django Device Cookies
 
 Throttle login attempts with `device cookies`_. Each login sets a signed
 cookie, and failed attempts count per cookie, or per username for requests
-without a valid one. After the limit, the backend rejects attempts like wrong
-passwords. That locks out an attacker, but not the owner's known browsers.
+without a valid one.
 
 Why
 ---
 
-The usual options are to lock the account or the IP address after a few
-failures. If you lock the account, an attacker can keep it locked by sending
-wrong passwords, and the person who owns it can't get in either. If you lock
-the IP, you hit everyone who shares it, and an attacker with a list of proxies
-isn't slowed down at all. A device cookie marks a browser that has already
-logged in to an account. Those browsers are exempt from the lockout, and every
-other browser is throttled per account.
+Temporary account lockout after several failed attempts is an easy target for
+denial of service: a fixed lockout policy lets an attacker lock selected users
+out of the site. Locking the account/IP pair instead is better against denial
+of service but weaker against botnets and proxies, and harder to implement
+correctly. Device cookies are a variant of account/IP blocking that uses a
+browser cookie instead of an IP address. Clients that have previously logged
+in are trusted and locked out individually. All untrusted clients share one
+temporary lockout per account, which bounds the guesses against an account to
+``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD`` per ``DEVICE_COOKIE_PERIOD`` regardless
+of the size of the botnet.
 
 Installation
 ------------
