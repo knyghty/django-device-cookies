@@ -8,7 +8,6 @@ from django.test import Client
 from pytest_django.fixtures import Settings
 
 from django_device_cookies.models import FailedAuthenticationAttempt
-from django_device_cookies.models import hash_username
 
 from .helpers import COOKIE
 from .helpers import LIMIT
@@ -54,7 +53,7 @@ def test_revocation(
     fail(trusted)
     age(FailedAuthenticationAttempt.objects.all())
     fail(trusted, 1)
-    assert f"Revoked a device of key {hash_username('alice')}." in caplog.messages
+    assert "Revoked a device of username 'alice'." in caplog.messages
     fail(Client())
     assert not logged_in(login(trusted))
     assert not FailedAuthenticationAttempt.objects.filter_stale().exists()
