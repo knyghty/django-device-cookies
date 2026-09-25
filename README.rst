@@ -75,6 +75,10 @@ tells the user to open a reset link in the same browser. Code that calls
 ``authenticate()`` outside a form gets a 429 response with the message from
 the middleware.
 
+The message reaches the page through ``form.non_field_errors``. A template
+that prints its own sentence when ``form.errors`` is set, as the example in
+the Django documentation does, hides it.
+
 Password reset
 --------------
 
