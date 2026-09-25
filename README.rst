@@ -29,10 +29,8 @@ Installation
 3. Put ``"django_device_cookies.backends.DeviceCookieBackend"`` first in
    ``AUTHENTICATION_BACKENDS``, before ``ModelBackend`` or your own backends.
 4. Run ``manage.py migrate``.
-5. Make sure that every login template renders ``form.non_field_errors``.
-   The login template in the Django documentation does not. It prints its own
-   sentence when ``form.errors`` is set, so a locked-out user reads that the
-   password was wrong.
+5. Make sure that every login template renders ``form.non_field_errors``, or
+   a locked-out user never sees why the login failed.
 
 With two backends, a call to ``login()`` for a user that did not come from
 ``authenticate()`` must pass ``backend``, as the Django documentation says.
