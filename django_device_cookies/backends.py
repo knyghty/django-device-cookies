@@ -5,9 +5,13 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
+from django.urls import get_resolver
+from django.utils.translation import gettext_lazy
 from django.views.decorators.debug import sensitive_variables
 
+from . import config
 from . import utils
+from . import views
 from .models import FailedAuthenticationAttempt
 
 
@@ -18,14 +22,30 @@ def hash_password(credentials: dict[str, object]) -> None:
         make_password(password)
 
 
+LOCKOUT_MESSAGE = gettext_lazy("Too many failed attempts. Try again later.")
+LOCKOUT_MESSAGE_WITH_RESET = gettext_lazy(
+    "Too many failed attempts. Try again later, or request a password reset and "
+    "open the link in this browser. You do not need to change your password."
+)
+
+
+def get_lockout_message() -> str:
+    if views.has_reset_view(get_resolver()):
+        return LOCKOUT_MESSAGE_WITH_RESET
+    return LOCKOUT_MESSAGE
+
+
 @sensitive_variables()
 def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
     utils.stash_bucket(request, credentials, bucket)
     attempts = FailedAuthenticationAttempt.objects
-    if bucket and attempts.is_locked_out(bucket.username, bucket.device):
-        hash_password(credentials)
-        raise PermissionDenied
+    if not bucket or not attempts.is_locked_out(bucket.username, bucket.device):
+        return
+    if not config.DEVICE_COOKIE_HIDE_LOCKOUTS:
+        raise utils.LockedOutError(get_lockout_message(), code="locked_out")
+    hash_password(credentials)
+    raise PermissionDenied
 
 
 class DeviceCookieBackend:

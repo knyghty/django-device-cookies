@@ -162,6 +162,7 @@ RULES: list[tuple[str, Callable[[object], bool], str]] = [
     ("DEVICE_COOKIE_MAX_AGE", is_positive, "a positive timedelta"),
     ("DEVICE_COOKIE_SECURE", is_bool, "a boolean"),
     ("DEVICE_COOKIE_PER_USER", is_bool, "a boolean"),
+    ("DEVICE_COOKIE_HIDE_LOCKOUTS", is_bool, "a boolean"),
     (
         "DEVICE_COOKIE_REVOKE_AFTER_FAILURES",
         lambda v: v is None or is_positive_int(v),

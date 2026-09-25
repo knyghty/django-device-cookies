@@ -115,6 +115,7 @@ def test_secure_off_is_a_deployment_warning(settings: Settings) -> None:
         ("DEVICE_COOKIE_MAX_AGE", "1d"),
         ("DEVICE_COOKIE_SECURE", 1),
         ("DEVICE_COOKIE_PER_USER", "yes"),
+        ("DEVICE_COOKIE_HIDE_LOCKOUTS", "yes"),
         ("DEVICE_COOKIE_REVOKE_AFTER_FAILURES", 0),
         ("DEVICE_COOKIE_SAMESITE", "sometimes"),
         ("DEVICE_COOKIE_DOMAIN", 1),

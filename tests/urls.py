@@ -29,6 +29,10 @@ def login_wrapped(request: HttpRequest) -> HttpResponse:
     return HttpResponse()
 
 
+def explode(request: HttpRequest) -> HttpResponse:
+    raise RuntimeError
+
+
 @csrf_exempt
 def login_logout(request: HttpRequest) -> HttpResponse:
     user = authenticate(
@@ -44,6 +48,7 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("login-logout/", login_logout, name="login-logout"),
     path("login-wrapped/", login_wrapped, name="login-wrapped"),
+    path("explode/", explode, name="explode"),
     path(
         "reset/<uidb64>/<token>/",
         PasswordResetConfirmView.as_view(),

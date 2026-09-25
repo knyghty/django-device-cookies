@@ -30,6 +30,7 @@ class Response(Protocol):
     cookies: SimpleCookie
     client: Client
     redirect_chain: list[tuple[str, int]]
+    text: str
 
     def __getitem__(self, header: str) -> str: ...
 
