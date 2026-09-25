@@ -75,6 +75,8 @@ tells the user to open a reset link in the same browser. Code that calls
 ``authenticate()`` outside a form gets a 429 response with the message from
 the middleware.
 
+A login template must render the form's errors to show it.
+
 Password reset
 --------------
 
