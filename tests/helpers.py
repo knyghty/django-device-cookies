@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Mapping
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from typing import Protocol
@@ -30,6 +31,8 @@ class Response(Protocol):
     cookies: SimpleCookie
     client: Client
     redirect_chain: list[tuple[str, int]]
+    text: str
+    context: Mapping[str, object]
 
     def __getitem__(self, header: str) -> str: ...
 

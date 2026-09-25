@@ -7,7 +7,10 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.views.decorators.debug import sensitive_variables
 
+from . import config
 from . import utils
+from . import views
+from .exceptions import LockedOutError
 from .models import FailedAuthenticationAttempt
 
 
@@ -23,9 +26,13 @@ def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
     utils.stash_bucket(request, credentials, bucket)
     attempts = FailedAuthenticationAttempt.objects
-    if bucket and attempts.is_locked_out(bucket.username, bucket.device):
-        hash_password(credentials)
-        raise PermissionDenied
+    if not bucket or not attempts.is_locked_out(bucket.username, bucket.device):
+        return
+    if not config.DEVICE_COOKIE_HIDE_LOCKOUTS:
+        utils.pop_bucket(request, credentials)
+        raise LockedOutError(views.get_lockout_message(), code="locked_out")
+    hash_password(credentials)
+    raise PermissionDenied
 
 
 class DeviceCookieBackend:

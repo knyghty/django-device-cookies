@@ -2,6 +2,7 @@ import logging
 import secrets
 import time
 import unicodedata
+from http import HTTPStatus
 from unittest import mock
 
 import pytest
@@ -11,6 +12,7 @@ from django.contrib.auth import aauthenticate
 from django.contrib.auth import aget_user
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.signals import user_logged_in
@@ -23,6 +25,7 @@ from pytest_django.fixtures import Settings
 
 from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
+from django_device_cookies.exceptions import LockedOutError
 from django_device_cookies.models import NONCE_LENGTH
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.models import hash_username
@@ -80,12 +83,38 @@ def test_lockout_lifts_one_slot_at_a_time(client: Client, user: User) -> None:
     assert not logged_in(login(Client()))
 
 
-def test_locked_attempt_hashes_the_password(client: Client, user: User) -> None:
+def test_locked_attempt_shows_the_lockout_message(client: Client, user: User) -> None:
     fail(client)
     with mock.patch("django_device_cookies.backends.make_password") as hasher:
-        attempt(client, password="wrong again")
-        authenticate(username="alice")
+        response = attempt(client, password=PASSWORD)
+    hasher.assert_not_called()
+    assert response.status_code == HTTPStatus.OK
+    assert "Too many failed attempts." in response.text
+    assert "You do not need to change your password." in response.text
+    assert "Please enter a correct" not in response.text
+
+
+def test_message_without_a_reset_view(
+    client: Client, user: User, settings: Settings
+) -> None:
+    settings.ROOT_URLCONF = "tests.urls_no_reset"
+    fail(client)
+    text = attempt(client, password=PASSWORD).text
+    assert "Too many failed attempts. Try again later." in text
+    assert "password reset" not in text
+
+
+def test_hidden_lockout_looks_like_a_wrong_password(
+    client: Client, user: User, settings: Settings
+) -> None:
+    settings.DEVICE_COOKIE_HIDE_LOCKOUTS = True
+    fail(client)
+    with mock.patch("django_device_cookies.backends.make_password") as hasher:
+        response = attempt(client, password="wrong again")
+        assert authenticate(username="alice") is None
     hasher.assert_called_once_with("wrong again")
+    assert "Too many failed attempts" not in response.text
+    assert "Please enter a correct" in response.text
 
 
 def test_attempts_during_lockout_are_not_recorded(client: Client, user: User) -> None:
@@ -93,10 +122,19 @@ def test_attempts_during_lockout_are_not_recorded(client: Client, user: User) ->
     assert count_attempts() == LIMIT
 
 
-def test_unknown_usernames_are_throttled_like_real_ones(client: Client) -> None:
+def test_unknown_usernames_are_throttled_like_real_ones(
+    client: Client, user: User
+) -> None:
     fail(client, LIMIT + 2, username="nobody")
     assert count_attempts(username="nobody", device="") == LIMIT
     assert FailedAuthenticationAttempt.objects.is_locked_out("nobody", "")
+    fail(client)
+    unknown = attempt(client, username="nobody").context["form"]
+    known = attempt(client).context["form"]
+    assert isinstance(unknown, AuthenticationForm)
+    assert isinstance(known, AuthenticationForm)
+    assert "Too many failed attempts." in str(unknown.errors)
+    assert unknown.errors == known.errors
 
 
 def test_login_issues_a_device_cookie(client: Client, user: User) -> None:
@@ -240,7 +278,8 @@ def test_username_case_variants_share_a_bucket(client: Client, user: User) -> No
 def test_authenticate_without_a_request_counts_as_untrusted(user: User) -> None:
     for _ in range(LIMIT):
         assert authenticate(username="alice", password="wrong") is None
-    assert authenticate(username="alice", password=PASSWORD) is None
+    with pytest.raises(LockedOutError):
+        authenticate(username="alice", password=PASSWORD)
     assert count_attempts(username="alice", device="") == LIMIT
 
 
@@ -256,7 +295,9 @@ def test_credentials_without_a_username_are_ignored(
 def test_username_field_credential_is_gated(user: User, rf: RequestFactory) -> None:
     request = rf.get("/")
     with mock.patch.object(get_user_model(), "USERNAME_FIELD", "email"):
-        for _ in range(LIMIT + 2):
+        for _ in range(LIMIT):
+            authenticate(request, email="alice@example.com", password="wrong")
+        with pytest.raises(LockedOutError):
             authenticate(request, email="alice@example.com", password="wrong")
     assert count_attempts(username="alice@example.com", device="") == LIMIT
 
@@ -270,9 +311,10 @@ def test_masked_username_field_is_throttled_with_a_request(
         mock.patch.object(User, "get_username", get_plain_username),
         mock.patch.object(UserManager, "get_by_natural_key", by_username),
     ):
-        for _ in range(LIMIT + 2):
+        for _ in range(LIMIT):
             authenticate(request, api_key="alice", password="wrong")
-        assert authenticate(request, api_key="alice", password=PASSWORD) is None
+        with pytest.raises(LockedOutError):
+            authenticate(request, api_key="alice", password=PASSWORD)
     assert count_attempts(username="alice", device="") == LIMIT
 
 
@@ -308,12 +350,21 @@ def test_stale_stash_is_ignored_for_another_username(
     assert count_attempts(username="alice") == 0
 
 
+def test_lockout_leaves_no_stash_behind(user: User, rf: RequestFactory) -> None:
+    fail(Client())
+    request = rf.get("/")
+    with pytest.raises(LockedOutError):
+        authenticate(request, username="alice", password=PASSWORD)
+    assert utils.BUCKET_KEY not in request.META
+
+
 def test_async_authenticate_is_gated(user: User, rf: RequestFactory) -> None:
     request = rf.get("/")
     credentials = {"username": "alice", "password": PASSWORD}
     assert async_to_sync(aauthenticate)(request, **credentials) == user
     fail(Client())
-    assert async_to_sync(aauthenticate)(request, **credentials) is None
+    with pytest.raises(LockedOutError):
+        async_to_sync(aauthenticate)(request, **credentials)
     assert async_to_sync(aauthenticate)(request, token="abc") is None
     assert async_to_sync(aauthenticate)(request, username="nobody") is None
     assert count_attempts(username="nobody", device="") == 1
@@ -329,7 +380,8 @@ def test_async_authenticate_trusts_a_device(
     assert async_to_sync(aauthenticate)(request, **credentials) is not None
     settings.DEVICE_COOKIE_REVOKE_AFTER_FAILURES = 1
     fail(trusted, 1)
-    assert async_to_sync(aauthenticate)(request, **credentials) is None
+    with pytest.raises(LockedOutError):
+        async_to_sync(aauthenticate)(request, **credentials)
 
 
 def test_signals_without_a_request(user: User) -> None:
