@@ -136,8 +136,7 @@ def test_lockout_is_logged_and_signalled(
     assert isinstance(device, str)
     assert len(device) == (NONCE_LENGTH if cookie else 0)
     clients = "device" if cookie else "untrusted clients"
-    key = hash_username("alice")
-    assert caplog.messages == [f"Locked out {clients} for key {key}."]
+    assert caplog.messages == [f"Locked out {clients} for username 'alice'."]
 
 
 def test_trusted_device_bypasses_untrusted_lockout(
@@ -301,7 +300,7 @@ def test_stale_stash_is_ignored_for_another_username(
     user: User, rf: RequestFactory
 ) -> None:
     request = rf.get("/")
-    utils.stash_bucket(request, {"username": "alice"}, ("alice", "x" * 32))
+    utils.stash_bucket(request, {"username": "alice"}, utils.Bucket("alice", "x" * 32))
     user_login_failed.send(
         sender=None, credentials={"username": "bob"}, request=request
     )

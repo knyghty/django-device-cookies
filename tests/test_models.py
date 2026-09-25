@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import User
 from django.utils import timezone
 
 from django_device_cookies.models import FailedAuthenticationAttempt
@@ -11,10 +12,21 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(("device", "label"), [("", "untrusted"), ("abc", "abc")])
-def test_str(device: str, label: str) -> None:
+def test_str(user: User, device: str, label: str) -> None:
     now = timezone.now()
     attempt = FailedAuthenticationAttempt(key="abc123", device=device, time=now)
     assert str(attempt) == f"abc123 ({label}) at {now}"
+    attempt = FailedAuthenticationAttempt(user=user, device=device, time=now)
+    assert str(attempt) == f"alice ({label}) at {now}"
+
+
+def test_deleting_the_user_keeps_the_lockout(user: User) -> None:
+    attempts = FailedAuthenticationAttempt.objects
+    for _ in range(LIMIT):
+        attempts.record_failure("alice", "", user)
+    user.delete()
+    assert attempts.filter(user=None).count() == LIMIT
+    assert attempts.is_locked_out("alice", "")
 
 
 def test_record_failure_reports_the_failure_that_locks() -> None:
