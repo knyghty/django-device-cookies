@@ -29,6 +29,10 @@ Installation
 3. Put ``"django_device_cookies.backends.DeviceCookieBackend"`` first in
    ``AUTHENTICATION_BACKENDS``, before ``ModelBackend`` or your own backends.
 4. Run ``manage.py migrate``.
+5. Make sure that every login template renders ``form.non_field_errors``.
+   The login template in the Django documentation does not. It prints its own
+   sentence when ``form.errors`` is set, so a locked-out user reads that the
+   password was wrong.
 
 With two backends, a call to ``login()`` for a user that did not come from
 ``authenticate()`` must pass ``backend``, as the Django documentation says.
@@ -75,9 +79,8 @@ tells the user to open a reset link in the same browser. Code that calls
 ``authenticate()`` outside a form gets a 429 response with the message from
 the middleware.
 
-The message reaches the page through ``form.non_field_errors``. A template
-that prints its own sentence when ``form.errors`` is set, as the example in
-the Django documentation does, hides it.
+The message reaches the page only through ``form.non_field_errors``. See step
+5 of the installation.
 
 Password reset
 --------------
