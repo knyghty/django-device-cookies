@@ -78,10 +78,6 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     return nonce if payload == build_payload(user, nonce) else ""
 
 
-class LockedOutError(ValidationError):
-    pass
-
-
 class Bucket(NamedTuple):
     username: str
     device: str

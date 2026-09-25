@@ -1,13 +1,19 @@
 from http import HTTPStatus
 
 import pytest
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.test import Client
+from django.urls import include
+from django.urls import path
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from pytest_django.fixtures import Settings
+
+from django_device_cookies.views import PasswordResetConfirmView
+from django_device_cookies.views import routes_reset_view
 
 from .helpers import COOKIE
 from .helpers import Response
@@ -73,3 +79,11 @@ def test_invalid_link_issues_nothing(client: Client, user: User) -> None:
     response = client.get(make_reset_link(user, token="abc-def"))
     assert response.status_code == HTTPStatus.OK
     assert COOKIE not in response.cookies
+
+
+def test_routes_reset_view() -> None:
+    login = path("login/", auth_views.LoginView.as_view())
+    ours = path("<uidb64>/<token>/", PasswordResetConfirmView.as_view())
+    theirs = path("<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view())
+    assert routes_reset_view(path("reset/", include(([ours], "accounts"))))
+    assert not routes_reset_view(path("reset/", include([login, theirs])))

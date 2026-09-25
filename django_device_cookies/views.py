@@ -1,12 +1,19 @@
-import functools
-from collections.abc import Iterable
-
 from django.contrib.auth import views as auth_views
 from django.http import HttpRequest
 from django.http import HttpResponse
+from django.urls import URLPattern
 from django.urls import URLResolver
+from django.urls import get_resolver
+from django.urls import get_urlconf
+from django.utils.translation import gettext_lazy
 
 from . import utils
+
+LOCKOUT_MESSAGE = gettext_lazy("Too many failed attempts. Try again later.")
+LOCKOUT_MESSAGE_WITH_RESET = gettext_lazy(
+    "Too many failed attempts. Try again later, or request a password reset and "
+    "open the link in this browser. You do not need to change your password."
+)
 
 
 class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
@@ -19,20 +26,15 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         return super().get(request, *args, **kwargs)
 
 
-def find_reset_view(patterns: Iterable[object]) -> bool:
-    for pattern in patterns:
-        if isinstance(pattern, URLResolver):
-            if find_reset_view(pattern.url_patterns):
-                return True
-            continue
-        view_class = getattr(getattr(pattern, "callback", None), "view_class", None)
-        if isinstance(view_class, type) and issubclass(
-            view_class, PasswordResetConfirmView
-        ):
-            return True
-    return False
+def routes_reset_view(pattern: URLPattern | URLResolver) -> bool:
+    if isinstance(pattern, URLResolver):
+        return any(map(routes_reset_view, pattern.url_patterns))
+    view_class = getattr(pattern.callback, "view_class", object)
+    return issubclass(view_class, PasswordResetConfirmView)
 
 
-@functools.cache
-def has_reset_view(resolver: URLResolver) -> bool:
-    return find_reset_view(resolver.url_patterns)
+def get_lockout_message() -> str:
+    patterns = get_resolver(get_urlconf()).url_patterns
+    if any(map(routes_reset_view, patterns)):
+        return LOCKOUT_MESSAGE_WITH_RESET
+    return LOCKOUT_MESSAGE

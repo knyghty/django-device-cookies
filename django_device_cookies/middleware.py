@@ -6,6 +6,7 @@ from django.http import HttpResponseBase
 from django.utils.deprecation import MiddlewareMixin
 
 from . import utils
+from .backends import LockedOutError
 
 
 class DeviceCookieMiddleware(MiddlewareMixin):
@@ -20,7 +21,7 @@ class DeviceCookieMiddleware(MiddlewareMixin):
     def process_exception(
         self, request: HttpRequest, exception: Exception
     ) -> HttpResponse | None:
-        if not isinstance(exception, utils.LockedOutError):
+        if not isinstance(exception, LockedOutError):
             return None
         return HttpResponse(
             exception.messages[0],

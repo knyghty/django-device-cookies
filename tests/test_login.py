@@ -25,11 +25,11 @@ from pytest_django.fixtures import Settings
 
 from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
+from django_device_cookies.backends import LockedOutError
 from django_device_cookies.models import NONCE_LENGTH
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.models import hash_username
 from django_device_cookies.signals import lockout
-from django_device_cookies.utils import LockedOutError
 
 from .helpers import COMBINED
 from .helpers import COOKIE
@@ -102,14 +102,6 @@ def test_message_without_a_reset_view(
     text = attempt(client, password=PASSWORD).text
     assert "Too many failed attempts. Try again later." in text
     assert "password reset" not in text
-
-
-def test_message_with_a_namespaced_reset_view(
-    client: Client, user: User, settings: Settings
-) -> None:
-    settings.ROOT_URLCONF = "tests.urls_namespaced"
-    fail(client)
-    assert "password reset" in attempt(client, password=PASSWORD).text
 
 
 def test_hidden_lockout_looks_like_a_wrong_password(

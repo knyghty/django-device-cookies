@@ -66,7 +66,9 @@ error, and the response takes the same password hashing time.
 Lockouts
 --------
 
-A locked-out attempt raises a ``ValidationError``. Every login form built on
+A locked-out attempt raises
+``django_device_cookies.backends.LockedOutError``, a ``ValidationError`` with
+the code ``locked_out``. Every login form built on
 ``authenticate()`` shows its message: "Too many failed attempts. Try again
 later." If your URLs route the password reset view below, the message also
 tells the user to open a reset link in the same browser. Code that calls

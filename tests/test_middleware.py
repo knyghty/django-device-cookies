@@ -3,10 +3,14 @@ from http import HTTPStatus
 import pytest
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from django.test import AsyncClient
 from django.test import Client
+from django.test import RequestFactory
 from django.urls import reverse
 from pytest_django.fixtures import Settings
+
+from django_device_cookies.middleware import DeviceCookieMiddleware
 
 from .helpers import COOKIE
 from .helpers import PASSWORD
@@ -57,9 +61,9 @@ def test_locked_attempt_outside_a_form_gets_429(client: Client, user: User) -> N
     assert response["Content-Type"] == "text/plain; charset=utf-8"
 
 
-def test_other_exceptions_pass_through(client: Client) -> None:
-    with pytest.raises(RuntimeError):
-        client.get(reverse("explode"))
+def test_other_exceptions_pass_through(rf: RequestFactory) -> None:
+    middleware = DeviceCookieMiddleware(HttpResponse)
+    assert middleware.process_exception(rf.get("/"), RuntimeError()) is None
 
 
 def test_async_locked_attempt_outside_a_form_gets_429(
