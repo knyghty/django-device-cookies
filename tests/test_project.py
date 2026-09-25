@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import pytest
 from django.core.management import call_command
 from django.test import Client
 
@@ -13,15 +14,24 @@ def test_migrations_match_models(db: None) -> None:
     )
 
 
-def test_admin_changelist_renders(admin_client: Client) -> None:
-    key = hash_username("alice")
-    FailedAuthenticationAttempt.objects.create(key=key)
-    FailedAuthenticationAttempt.objects.create(key=hash_username("bob"), device="abc")
-    url = "/admin/device_cookies/failedauthenticationattempt/"
-    response = admin_client.get(url)
+URL = "/admin/device_cookies/failedauthenticationattempt/"
+
+
+@pytest.fixture
+def attempts(db: None) -> None:
+    FailedAuthenticationAttempt.objects.record_failure("alice", "")
+    FailedAuthenticationAttempt.objects.record_failure("bob", "abc")
+
+
+def test_admin_changelist_renders(admin_client: Client, attempts: None) -> None:
+    response = admin_client.get(URL)
     assert response.status_code == HTTPStatus.OK
-    assert "Enter the username or a key." in response.text
-    for query in ["Alice", key]:
-        text = admin_client.get(url, {"q": query}).text
-        assert key in text
-        assert hash_username("bob") not in text
+    assert "Enter all or part of the username, or a key." in response.text
+
+
+@pytest.mark.parametrize(
+    "query", ["alice", "ALI", "lic", hash_username("alice")], ids=str.lower
+)
+def test_admin_search(admin_client: Client, attempts: None, query: str) -> None:
+    rows = admin_client.get(URL, {"q": query}).context["cl"].result_list
+    assert [row.username for row in rows] == ["alice"]

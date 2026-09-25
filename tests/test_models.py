@@ -13,8 +13,19 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(("device", "label"), [("", "untrusted"), ("abc", "abc")])
 def test_str(device: str, label: str) -> None:
     now = timezone.now()
-    attempt = FailedAuthenticationAttempt(key="abc123", device=device, time=now)
-    assert str(attempt) == f"abc123 ({label}) at {now}"
+    attempt = FailedAuthenticationAttempt(username="alice", device=device, time=now)
+    assert str(attempt) == f"alice ({label}) at {now}"
+
+
+def test_long_usernames_are_truncated_but_keep_their_own_bucket() -> None:
+    attempts = FailedAuthenticationAttempt.objects
+    long = "a" * 600
+    attempts.record_failure(long, "")
+    attempts.record_failure(long + "b", "")
+    first, second = attempts.order_by("pk")
+    assert first.username == second.username == "a" * 500
+    assert first.key == hash_username(long)
+    assert first.key != second.key
 
 
 def test_record_failure_reports_the_failure_that_locks() -> None:
