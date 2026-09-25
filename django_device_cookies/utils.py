@@ -2,6 +2,7 @@ import hashlib
 import secrets
 import unicodedata
 from collections.abc import Mapping
+from typing import NamedTuple
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -77,10 +78,16 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     return nonce if payload == build_payload(user, nonce) else ""
 
 
+class Bucket(NamedTuple):
+    username: str
+    device: str
+    user: AbstractBaseUser | None = None
+
+
 @sensitive_variables()
 def get_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
-) -> tuple[str, str] | None:
+) -> Bucket | None:
     username = get_username(credentials)
     if username is None:
         return None
@@ -89,14 +96,14 @@ def get_bucket(
     device = get_device(request, user)
     if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
         device = ""
-    return key, device
+    return Bucket(key, device, user)
 
 
 @sensitive_variables()
 def stash_bucket(
     request: HttpRequest | None,
     credentials: Mapping[str, object],
-    bucket: tuple[str, str] | None,
+    bucket: Bucket | None,
 ) -> None:
     if request is not None and bucket is not None:
         request.META[BUCKET_KEY] = (get_username(credentials), bucket)
@@ -105,7 +112,7 @@ def stash_bucket(
 @sensitive_variables()
 def pop_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
-) -> tuple[str, str] | None:
+) -> Bucket | None:
     stash = request.META.pop(BUCKET_KEY, None) if request is not None else None
     if stash is not None and get_username(credentials) in (None, stash[0]):
         return stash[1]

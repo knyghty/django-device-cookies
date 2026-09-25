@@ -300,7 +300,7 @@ def test_stale_stash_is_ignored_for_another_username(
     user: User, rf: RequestFactory
 ) -> None:
     request = rf.get("/")
-    utils.stash_bucket(request, {"username": "alice"}, ("alice", "x" * 32))
+    utils.stash_bucket(request, {"username": "alice"}, utils.Bucket("alice", "x" * 32))
     user_login_failed.send(
         sender=None, credentials={"username": "bob"}, request=request
     )

@@ -43,8 +43,8 @@ def test_get_username(credentials: dict[str, object], expected: str | None) -> N
 @pytest.mark.parametrize(
     ("credentials", "expected"),
     [
-        ({"username": "Alice"}, ("alice", "")),
-        ({"username": "a" * 300}, ("a" * 300, "")),
+        ({"username": "Alice"}, ("alice", "", None)),
+        ({"username": "a" * 300}, ("a" * 300, "", None)),
         ({}, None),
     ],
 )
