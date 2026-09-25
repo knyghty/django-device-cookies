@@ -75,9 +75,7 @@ tells the user to open a reset link in the same browser. Code that calls
 ``authenticate()`` outside a form gets a 429 response with the message from
 the middleware.
 
-The message is a form error. A template that prints its own sentence instead
-of the form's errors, as the login template in the Django documentation does,
-never shows it.
+A login template must render the form's errors to show it.
 
 Password reset
 --------------
