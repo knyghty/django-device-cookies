@@ -26,12 +26,21 @@ def attempts(db: None) -> None:
 def test_admin_changelist_renders(admin_client: Client, attempts: None) -> None:
     response = admin_client.get(URL)
     assert response.status_code == HTTPStatus.OK
-    assert "Enter all or part of the username, or a key." in response.text
+    assert "Enter the start of the username, or a key." in response.text
 
 
 @pytest.mark.parametrize(
-    "query", ["alice", "ALI", "lic", hash_username("alice")], ids=str.lower
+    ("query", "expected"),
+    [
+        ("alice", ["alice"]),
+        ("ALI", ["alice"]),
+        (hash_username("alice"), ["alice"]),
+        ("lic", []),
+    ],
+    ids=["whole", "prefix in another case", "key", "infix"],
 )
-def test_admin_search(admin_client: Client, attempts: None, query: str) -> None:
+def test_admin_search(
+    admin_client: Client, attempts: None, query: str, expected: list[str]
+) -> None:
     rows = admin_client.get(URL, {"q": query}).context["cl"].result_list
-    assert [row.username for row in rows] == ["alice"]
+    assert [row.username for row in rows] == expected

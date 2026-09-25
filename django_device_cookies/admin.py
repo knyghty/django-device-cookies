@@ -12,13 +12,13 @@ from .models import hash_username
 class FailedAuthenticationAttemptAdmin(admin.ModelAdmin):
     list_display = ["username", "device", "time"]
     ordering = ["-time"]
-    search_fields = ["username"]
+    search_fields = ["username__startswith"]
 
     @property
     def search_help_text(self) -> str:
         user_model = get_user_model()
         field = user_model._meta.get_field(user_model.USERNAME_FIELD)
-        return f"Enter all or part of the {field.verbose_name}, or a key."
+        return f"Enter the start of the {field.verbose_name}, or a key."
 
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet, search_term: str
