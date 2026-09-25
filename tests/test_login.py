@@ -25,7 +25,7 @@ from pytest_django.fixtures import Settings
 
 from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
-from django_device_cookies.backends import LockedOutError
+from django_device_cookies.exceptions import LockedOutError
 from django_device_cookies.models import NONCE_LENGTH
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.models import hash_username
@@ -348,6 +348,14 @@ def test_stale_stash_is_ignored_for_another_username(
     )
     assert count_attempts(username="bob", device="") == 1
     assert count_attempts(username="alice") == 0
+
+
+def test_lockout_leaves_no_stash_behind(user: User, rf: RequestFactory) -> None:
+    fail(Client())
+    request = rf.get("/")
+    with pytest.raises(LockedOutError):
+        authenticate(request, username="alice", password=PASSWORD)
+    assert utils.BUCKET_KEY not in request.META
 
 
 def test_async_authenticate_is_gated(user: User, rf: RequestFactory) -> None:

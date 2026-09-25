@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from django.contrib.auth import views as auth_views
@@ -85,5 +86,6 @@ def test_routes_reset_view() -> None:
     login = path("login/", auth_views.LoginView.as_view())
     ours = path("<uidb64>/<token>/", PasswordResetConfirmView.as_view())
     theirs = path("<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view())
+    odd = path("odd/", mock.Mock(view_class="not a class"))
     assert routes_reset_view(path("reset/", include(([ours], "accounts"))))
-    assert not routes_reset_view(path("reset/", include([login, theirs])))
+    assert not routes_reset_view(path("reset/", include([login, theirs, odd])))

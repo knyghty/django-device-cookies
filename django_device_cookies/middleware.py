@@ -6,7 +6,7 @@ from django.http import HttpResponseBase
 from django.utils.deprecation import MiddlewareMixin
 
 from . import utils
-from .backends import LockedOutError
+from .exceptions import LockedOutError
 
 
 class DeviceCookieMiddleware(MiddlewareMixin):

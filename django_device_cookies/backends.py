@@ -4,13 +4,13 @@ from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
-from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.views.decorators.debug import sensitive_variables
 
 from . import config
 from . import utils
 from . import views
+from .exceptions import LockedOutError
 from .models import FailedAuthenticationAttempt
 
 
@@ -21,10 +21,6 @@ def hash_password(credentials: dict[str, object]) -> None:
         make_password(password)
 
 
-class LockedOutError(ValidationError):
-    pass
-
-
 @sensitive_variables()
 def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
@@ -33,6 +29,7 @@ def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     if not bucket or not attempts.is_locked_out(bucket.username, bucket.device):
         return
     if not config.DEVICE_COOKIE_HIDE_LOCKOUTS:
+        utils.pop_bucket(request, credentials)
         raise LockedOutError(views.get_lockout_message(), code="locked_out")
     hash_password(credentials)
     raise PermissionDenied

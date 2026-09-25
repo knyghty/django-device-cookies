@@ -29,8 +29,10 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
 def routes_reset_view(pattern: URLPattern | URLResolver) -> bool:
     if isinstance(pattern, URLResolver):
         return any(map(routes_reset_view, pattern.url_patterns))
-    view_class = getattr(pattern.callback, "view_class", object)
-    return issubclass(view_class, PasswordResetConfirmView)
+    view_class = getattr(pattern.callback, "view_class", None)
+    return isinstance(view_class, type) and issubclass(
+        view_class, PasswordResetConfirmView
+    )
 
 
 def get_lockout_message() -> str:
