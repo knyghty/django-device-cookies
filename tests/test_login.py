@@ -12,6 +12,7 @@ from django.contrib.auth import aauthenticate
 from django.contrib.auth import aget_user
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.signals import user_logged_in
@@ -136,10 +137,12 @@ def test_unknown_usernames_are_throttled_like_real_ones(
     assert count_attempts(username="nobody", device="") == LIMIT
     assert FailedAuthenticationAttempt.objects.is_locked_out("nobody", "")
     fail(client)
-    unknown = attempt(client, username="nobody").text
-    known = attempt(client).text
-    assert "Too many failed attempts." in unknown
-    assert unknown.replace("nobody", "alice") == known
+    unknown = attempt(client, username="nobody").context["form"]
+    known = attempt(client).context["form"]
+    assert isinstance(unknown, AuthenticationForm)
+    assert isinstance(known, AuthenticationForm)
+    assert "Too many failed attempts." in str(unknown.errors)
+    assert unknown.errors == known.errors
 
 
 def test_login_issues_a_device_cookie(client: Client, user: User) -> None:
