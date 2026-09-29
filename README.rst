@@ -60,8 +60,8 @@ The period over which failed attempts count.
 
 Default: ``5``
 
-The number of failed attempts in one period that locks a device, or all
-untrusted clients of an account, out.
+The number of failed attempts in one period that locks out a device, or all
+untrusted clients of an account.
 
 ``DEVICE_COOKIE_MAX_AGE``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,8 +145,8 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 
     Too many failed attempts. Try again later.
 
-If the password reset view below is in your URLs, the message also says that a
-reset link opened in the same browser lets them in.
+If the password reset view below is in your URLs, the message also says that
+using a password reset link opened in the same browser will clear the lockout.
 
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
@@ -209,8 +209,11 @@ Limitations
 - The throttle covers only calls to ``authenticate()`` and
   ``aauthenticate()``. Calls without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
-- If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
-  the throttle ignores calls without a request that pass it by name.
+- Django blanks out credential names that look like secrets, such as
+  ``api_key``, in the ``user_login_failed`` signal. If your ``USERNAME_FIELD``
+  has such a name, failed calls to ``authenticate()`` that pass it by that name
+  and have no request are not counted. Django's login form passes
+  ``username``, which is never blanked.
 
 System checks
 -------------
