@@ -41,27 +41,84 @@ Replacing ``ModelBackend`` with it logs out every existing session.
 Settings
 --------
 
-The defaults:
+``DEVICE_COOKIE_NAME``
+~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+Default: ``"django_device"``
 
-    DEVICE_COOKIE_NAME = "django_device"
-    DEVICE_COOKIE_PERIOD = timedelta(minutes=15)
-    DEVICE_COOKIE_ATTEMPTS_PER_PERIOD = 5
-    DEVICE_COOKIE_MAX_AGE = timedelta(days=365)
-    DEVICE_COOKIE_SECURE = True
-    DEVICE_COOKIE_SAMESITE = "Lax"
-    DEVICE_COOKIE_DOMAIN = None
-    DEVICE_COOKIE_PATH = "/"
-    DEVICE_COOKIE_PER_USER = False
-    DEVICE_COOKIE_REVOKE_AFTER_FAILURES = None
-    DEVICE_COOKIE_HIDE_LOCKOUTS = False
+The name of the cookie.
 
-``DEVICE_COOKIE_PER_USER`` sets one cookie per user instead of per browser.
-``DEVICE_COOKIE_REVOKE_AFTER_FAILURES`` stops trusting a cookie after that many
-failures over its life. ``DEVICE_COOKIE_HIDE_LOCKOUTS`` makes a locked-out
-attempt fail exactly like a wrong password: the login form shows its usual
-error, and the response takes the same password hashing time.
+``DEVICE_COOKIE_PERIOD``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``timedelta(minutes=15)``
+
+The period over which failed attempts count.
+
+``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``5``
+
+The number of failed attempts in one period that locks a bucket.
+
+``DEVICE_COOKIE_MAX_AGE``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``timedelta(days=365)``
+
+How long the cookie stays valid.
+
+``DEVICE_COOKIE_SECURE``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``True``
+
+Whether the cookie is sent over HTTPS only.
+
+``DEVICE_COOKIE_SAMESITE``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"Lax"``
+
+The value of the cookie's ``SameSite`` flag.
+
+``DEVICE_COOKIE_DOMAIN``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The domain of the cookie.
+
+``DEVICE_COOKIE_PATH``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"/"``
+
+The path of the cookie.
+
+``DEVICE_COOKIE_PER_USER``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Whether to set one cookie per user instead of one per browser.
+
+``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The number of failed attempts over a cookie's life after which it is no longer
+trusted.
+
+``DEVICE_COOKIE_HIDE_LOCKOUTS``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Whether a locked-out attempt fails exactly like a wrong password, with the
+form's usual error and the same password hashing time.
 
 Lockouts
 --------
