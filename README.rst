@@ -60,7 +60,8 @@ The period over which failed attempts count.
 
 Default: ``5``
 
-The number of failed attempts in one period that locks a bucket.
+The number of failed attempts in one period that locks a device, or all
+untrusted clients of an account, out.
 
 ``DEVICE_COOKIE_MAX_AGE``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
