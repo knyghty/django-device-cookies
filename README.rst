@@ -108,11 +108,11 @@ The path of the cookie.
 
 Default: ``False``
 
-Whether to set one cookie per user instead of one per browser. By default,
+Whether to set one cookie per user instead of one per browser. With ``False``,
 each login replaces the browser's cookie, and only the last account to log in
-from a browser stays trusted on it. Set this to ``True`` where several people
-share a browser, such as a family computer or a support desk. Each account then
-keeps its own cookie there.
+from a browser stays trusted on it. With ``True``, every account that logs in
+from a browser stays trusted on it, and the browser sends one cookie per
+account.
 
 ``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -121,7 +121,7 @@ Default: ``None``
 
 The number of failed attempts over a cookie's life after which it is no longer
 trusted. A stolen cookie gives its holder ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
-guesses per period for as long as the cookie lives. This setting caps that.
+guesses per period for as long as the cookie lives.
 The package then keeps each device's failed attempts until its cookie expires.
 A common value is ten times ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``.
 
