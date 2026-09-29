@@ -22,6 +22,11 @@ def test_unknown_setting() -> None:
         _ = config.DEVICE_COOKIE_FLAVOUR
 
 
+def test_lockouts_are_hidden_by_default(settings: Settings) -> None:
+    del settings.DEVICE_COOKIE_HIDE_LOCKOUTS
+    assert config.DEVICE_COOKIE_HIDE_LOCKOUTS is True
+
+
 def test_name(client: Client, user: User, settings: Settings) -> None:
     settings.DEVICE_COOKIE_NAME = "trusted"
     cookies = login(client).cookies

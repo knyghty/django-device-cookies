@@ -55,18 +55,20 @@ The defaults:
     DEVICE_COOKIE_PATH = "/"
     DEVICE_COOKIE_PER_USER = False
     DEVICE_COOKIE_REVOKE_AFTER_FAILURES = None
-    DEVICE_COOKIE_HIDE_LOCKOUTS = False
+    DEVICE_COOKIE_HIDE_LOCKOUTS = True
 
 ``DEVICE_COOKIE_PER_USER`` sets one cookie per user instead of per browser.
 ``DEVICE_COOKIE_REVOKE_AFTER_FAILURES`` stops trusting a cookie after that many
 failures over its life. ``DEVICE_COOKIE_HIDE_LOCKOUTS`` makes a locked-out
 attempt fail exactly like a wrong password: the login form shows its usual
-error, and the response takes the same password hashing time.
+error, and the response takes the same password hashing time. Set it to
+``False`` to tell the user what happened.
 
 Lockouts
 --------
 
-A locked-out attempt raises
+By default, a locked-out attempt fails like a wrong password. With
+``DEVICE_COOKIE_HIDE_LOCKOUTS = False`` it raises
 ``django_device_cookies.exceptions.LockedOutError``, a ``ValidationError`` with
 the code ``locked_out``. Every login form built on
 ``authenticate()`` shows its message: "Too many failed attempts. Try again

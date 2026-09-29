@@ -107,7 +107,7 @@ def test_message_without_a_reset_view(
 def test_hidden_lockout_looks_like_a_wrong_password(
     client: Client, user: User, settings: Settings
 ) -> None:
-    settings.DEVICE_COOKIE_HIDE_LOCKOUTS = True
+    del settings.DEVICE_COOKIE_HIDE_LOCKOUTS
     fail(client)
     with mock.patch("django_device_cookies.backends.make_password") as hasher:
         response = attempt(client, password="wrong again")
