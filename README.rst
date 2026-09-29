@@ -75,21 +75,26 @@ How long the cookie stays valid.
 
 Default: ``True``
 
-Whether the cookie is sent over HTTPS only.
+Whether to use a secure cookie for the device cookie. If this is set to ``True``,
+the cookie will be marked as "secure", which means browsers may ensure that
+the cookie is only sent with an HTTPS connection.
 
 ``DEVICE_COOKIE_SAMESITE``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``"Lax"``
 
-The value of the cookie's ``SameSite`` flag.
+The value of the SameSite flag on the device cookie.
+This flag prevents the cookie from being sent in cross-site requests.
 
 ``DEVICE_COOKIE_DOMAIN``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``None``
 
-The domain of the cookie.
+The domain to use for device cookies.
+Set this to a string such as "example.com" for cross-domain cookies,
+or use None for a standard domain cookie.
 
 ``DEVICE_COOKIE_PATH``
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -105,6 +110,16 @@ Default: ``False``
 
 Whether to set one cookie per user instead of one per browser.
 
+By default, each login replaces the browser's cookie. On a browser that several
+people share, only the last person to log in stays trusted. If an attacker
+locks one of the others out, that person cannot get in from the shared browser
+either. Set this to ``True`` for shared devices, such as a family computer, a
+shop-floor machine, or a support desk where staff switch between accounts.
+Each account then keeps its own cookie on the browser. Leave it ``False`` for
+the usual case of one person per browser. It keeps the cookie count down, and
+it is the case that OWASP describes. OWASP treats shared clients as out of
+scope by default.
+
 ``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -113,6 +128,16 @@ Default: ``None``
 The number of failed attempts over a cookie's life after which it is no longer
 trusted.
 
+A stolen device cookie gives its holder ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
+guesses per period on top of the untrusted ones, for as long as the cookie
+lives. OWASP suggests a permanent lockout of a device cookie after ten times
+that number. Set this to that value, or lower, where a stolen cookie is a
+concern, for example on unmanaged or shared devices with long-lived cookies.
+The package then keeps each device's failed attempts until its cookie expires,
+and the table grows accordingly. Leave it ``None`` where the ``Secure`` and
+``HttpOnly`` flags are protection enough. OWASP notes that one leaked cookie
+adds little to an attack.
+
 ``DEVICE_COOKIE_HIDE_LOCKOUTS``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -120,7 +145,8 @@ Default: ``True``
 
 Whether a locked-out attempt fails exactly like a wrong password, with the
 form's usual error and the same password hashing time. Set it to ``False`` to
-tell the user what happened.
+tell the user what happened. Setting this to ``True`` increases security at
+the cost of user-friendly error messages for legitimate users.
 
 Lockouts
 --------
