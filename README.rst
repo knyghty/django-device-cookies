@@ -209,11 +209,6 @@ Limitations
 - The throttle covers only calls to ``authenticate()`` and
   ``aauthenticate()``. Calls without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
-- Django blanks out credential names that look like secrets, such as
-  ``api_key``, in the ``user_login_failed`` signal. If your ``USERNAME_FIELD``
-  has such a name, failed calls to ``authenticate()`` that pass it by that name
-  and have no request are not counted. Django's login form passes
-  ``username``, which is never blanked.
 
 System checks
 -------------
@@ -230,9 +225,10 @@ System checks
   not ``Secure``. No client gets a device cookie.
 * **device_cookies.E005**: ``AUTHENTICATION_BACKENDS`` has only the device
   cookie backend. Nothing authenticates.
-* **device_cookies.W003**: Django masks ``USERNAME_FIELD`` ``<field>`` in the
-  ``user_login_failed`` signal. The throttle ignores calls to
-  ``authenticate()`` without a request that pass it by name.
+* **device_cookies.W003**: Django blanks out ``USERNAME_FIELD`` ``<field>`` in
+  the ``user_login_failed`` signal, as its name looks like a secret. Failed
+  calls to ``authenticate()`` that pass it by that name and have no request
+  are not counted.
 
 This check runs only with the ``--deploy`` option:
 
