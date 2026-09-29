@@ -41,43 +41,118 @@ Replacing ``ModelBackend`` with it logs out every existing session.
 Settings
 --------
 
-The defaults:
+``DEVICE_COOKIE_NAME``
+~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+Default: ``"django_device"``
 
-    DEVICE_COOKIE_NAME = "django_device"
-    DEVICE_COOKIE_PERIOD = timedelta(minutes=15)
-    DEVICE_COOKIE_ATTEMPTS_PER_PERIOD = 5
-    DEVICE_COOKIE_MAX_AGE = timedelta(days=365)
-    DEVICE_COOKIE_SECURE = True
-    DEVICE_COOKIE_SAMESITE = "Lax"
-    DEVICE_COOKIE_DOMAIN = None
-    DEVICE_COOKIE_PATH = "/"
-    DEVICE_COOKIE_PER_USER = False
-    DEVICE_COOKIE_REVOKE_AFTER_FAILURES = None
-    DEVICE_COOKIE_HIDE_LOCKOUTS = True
+The name of the cookie.
 
-``DEVICE_COOKIE_PER_USER`` sets one cookie per user instead of per browser.
-``DEVICE_COOKIE_REVOKE_AFTER_FAILURES`` stops trusting a cookie after that many
-failures over its life. ``DEVICE_COOKIE_HIDE_LOCKOUTS`` makes a locked-out
-attempt fail exactly like a wrong password: the login form shows its usual
-error, and the response takes the same password hashing time. Set it to
-``False`` to tell the user what happened.
+``DEVICE_COOKIE_PERIOD``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``timedelta(minutes=15)``
+
+The period over which failed attempts count.
+
+``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``5``
+
+The number of failed attempts in one period that locks out a device, or all
+untrusted clients of an account.
+
+``DEVICE_COOKIE_MAX_AGE``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``timedelta(days=365)``
+
+How long the cookie stays valid.
+
+``DEVICE_COOKIE_SECURE``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``True``
+
+Whether to use a secure cookie for the device cookie. If this is set to ``True``,
+the cookie will be marked as "secure", which means browsers may ensure that
+the cookie is only sent with an HTTPS connection.
+
+``DEVICE_COOKIE_SAMESITE``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"Lax"``
+
+The value of the SameSite flag on the device cookie.
+This flag prevents the cookie from being sent in cross-site requests.
+
+``DEVICE_COOKIE_DOMAIN``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The domain to use for device cookies.
+Set this to a string such as "example.com" for cross-domain cookies,
+or use None for a standard domain cookie.
+
+``DEVICE_COOKIE_PATH``
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"/"``
+
+The path of the cookie.
+
+``DEVICE_COOKIE_PER_USER``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Whether to set one cookie per user instead of one per browser. With ``False``,
+each login replaces the browser's cookie, and only the last account to log in
+from a browser stays trusted on it. When set to ``True``, every account that
+logs in from a browser stays trusted on it, and the browser sends one cookie
+per account.
+
+``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The number of failed attempts over a cookie's life after which it is no longer
+trusted. A stolen cookie gives its holder ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
+guesses per period for as long as the cookie lives.
+The package then keeps each device's failed attempts until its cookie expires.
+A common value is ten times ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``.
+
+``DEVICE_COOKIE_HIDE_LOCKOUTS``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``True``
+
+Whether a locked-out attempt fails exactly like a wrong password, with the
+form's usual error and the same password hashing time. Set it to ``False`` to
+tell the user what happened. Setting this to ``True`` increases security at
+the cost of user-friendly error messages for legitimate users.
 
 Lockouts
 --------
 
-By default, a locked-out attempt fails like a wrong password. With
-``DEVICE_COOKIE_HIDE_LOCKOUTS = False`` it raises
-``django_device_cookies.exceptions.LockedOutError``, a ``ValidationError`` with
-the code ``locked_out``. Every login form built on
-``authenticate()`` shows its message: "Too many failed attempts. Try again
-later." If your URLs route the password reset view below, the message also
-tells the user to open a reset link in the same browser. Code that calls
-``authenticate()`` outside a form gets a 429 response with the message from
-the middleware.
+By default, a locked-out user sees the login form's usual error, as if the
+password were wrong.
 
-A login template must render the form's errors to show it.
+With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
+
+    Too many failed attempts. Try again later.
+
+If the password reset view below is in your URLs, the message also says that
+using a password reset link opened in the same browser will clear the lockout.
+
+The message is a form error, raised from ``authenticate()`` as
+``django_device_cookies.exceptions.LockedOutError``. The admin and any form
+built on ``AuthenticationForm`` show it, as long as the template renders the
+form's errors. Code that calls ``authenticate()`` outside a form gets a 429
+response with the message as plain text.
 
 Password reset
 --------------
@@ -134,8 +209,6 @@ Limitations
 - The throttle covers only calls to ``authenticate()`` and
   ``aauthenticate()``. Calls without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
-- If Django masks your ``USERNAME_FIELD`` in the ``user_login_failed`` signal,
-  the throttle ignores calls without a request that pass it by name.
 
 System checks
 -------------
@@ -152,9 +225,10 @@ System checks
   not ``Secure``. No client gets a device cookie.
 * **device_cookies.E005**: ``AUTHENTICATION_BACKENDS`` has only the device
   cookie backend. Nothing authenticates.
-* **device_cookies.W003**: Django masks ``USERNAME_FIELD`` ``<field>`` in the
-  ``user_login_failed`` signal. The throttle ignores calls to
-  ``authenticate()`` without a request that pass it by name.
+* **device_cookies.W003**: Django blanks out ``USERNAME_FIELD`` ``<field>`` in
+  the ``user_login_failed`` signal, as its name looks like a secret. Failed
+  calls to ``authenticate()`` that pass it by that name and have no request
+  are not counted.
 
 This check runs only with the ``--deploy`` option:
 

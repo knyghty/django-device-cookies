@@ -97,9 +97,10 @@ def check_username_field(
         return []
     return [
         checks.Warning(
-            f"Django masks USERNAME_FIELD {field!r} in the user_login_failed signal. "
-            "The throttle ignores calls to authenticate() without a request that "
-            "pass it by name.",
+            f"Django blanks out USERNAME_FIELD {field!r} in the user_login_failed "
+            "signal, as its name looks like a secret. Failed calls to "
+            "authenticate() that pass it by that name and have no request are not "
+            "counted.",
             hint="Pass the request to authenticate(), or give the field a name "
             "without api, token, key, secret, password or signature.",
             id="device_cookies.W003",
