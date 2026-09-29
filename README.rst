@@ -108,17 +108,11 @@ The path of the cookie.
 
 Default: ``False``
 
-Whether to set one cookie per user instead of one per browser.
-
-By default, each login replaces the browser's cookie. On a browser that several
-people share, only the last person to log in stays trusted. If an attacker
-locks one of the others out, that person cannot get in from the shared browser
-either. Set this to ``True`` for shared devices, such as a family computer, a
-shop-floor machine, or a support desk where staff switch between accounts.
-Each account then keeps its own cookie on the browser. Leave it ``False`` for
-the usual case of one person per browser. It keeps the cookie count down, and
-it is the case that OWASP describes. OWASP treats shared clients as out of
-scope by default.
+Whether to set one cookie per user instead of one per browser. By default,
+each login replaces the browser's cookie, and only the last account to log in
+from a browser stays trusted on it. Set this to ``True`` where several people
+share a browser, such as a family computer or a support desk. Each account then
+keeps its own cookie there.
 
 ``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,17 +120,10 @@ scope by default.
 Default: ``None``
 
 The number of failed attempts over a cookie's life after which it is no longer
-trusted.
-
-A stolen device cookie gives its holder ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
-guesses per period on top of the untrusted ones, for as long as the cookie
-lives. OWASP suggests a permanent lockout of a device cookie after ten times
-that number. Set this to that value, or lower, where a stolen cookie is a
-concern, for example on unmanaged or shared devices with long-lived cookies.
-The package then keeps each device's failed attempts until its cookie expires,
-and the table grows accordingly. Leave it ``None`` where the ``Secure`` and
-``HttpOnly`` flags are protection enough. OWASP notes that one leaked cookie
-adds little to an attack.
+trusted. A stolen cookie gives its holder ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``
+guesses per period for as long as the cookie lives. This setting caps that.
+The package then keeps each device's failed attempts until its cookie expires.
+A common value is ten times ``DEVICE_COOKIE_ATTEMPTS_PER_PERIOD``.
 
 ``DEVICE_COOKIE_HIDE_LOCKOUTS``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
