@@ -25,6 +25,8 @@ MIDDLEWARE = [
     "django_device_cookies.middleware.DeviceCookieMiddleware",
 ]
 
+DEVICE_COOKIE_HIDE_LOCKOUTS = False
+
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 ROOT_URLCONF = "tests.urls"

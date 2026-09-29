@@ -116,15 +116,17 @@ trusted.
 ``DEVICE_COOKIE_HIDE_LOCKOUTS``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``False``
+Default: ``True``
 
 Whether a locked-out attempt fails exactly like a wrong password, with the
-form's usual error and the same password hashing time.
+form's usual error and the same password hashing time. Set it to ``False`` to
+tell the user what happened.
 
 Lockouts
 --------
 
-A locked-out attempt raises
+By default, a locked-out attempt fails like a wrong password. With
+``DEVICE_COOKIE_HIDE_LOCKOUTS = False`` it raises
 ``django_device_cookies.exceptions.LockedOutError``, a ``ValidationError`` with
 the code ``locked_out``. Every login form built on
 ``authenticate()`` shows its message: "Too many failed attempts. Try again
