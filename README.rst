@@ -110,9 +110,9 @@ Default: ``False``
 
 Whether to set one cookie per user instead of one per browser. With ``False``,
 each login replaces the browser's cookie, and only the last account to log in
-from a browser stays trusted on it. With ``True``, every account that logs in
-from a browser stays trusted on it, and the browser sends one cookie per
-account.
+from a browser stays trusted on it. When set to ``True``, every account that
+logs in from a browser stays trusted on it, and the browser sends one cookie
+per account.
 
 ``DEVICE_COOKIE_REVOKE_AFTER_FAILURES``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,17 +138,21 @@ the cost of user-friendly error messages for legitimate users.
 Lockouts
 --------
 
-By default, a locked-out attempt fails like a wrong password. With
-``DEVICE_COOKIE_HIDE_LOCKOUTS = False`` it raises
-``django_device_cookies.exceptions.LockedOutError``, a ``ValidationError`` with
-the code ``locked_out``. Every login form built on
-``authenticate()`` shows its message: "Too many failed attempts. Try again
-later." If your URLs route the password reset view below, the message also
-tells the user to open a reset link in the same browser. Code that calls
-``authenticate()`` outside a form gets a 429 response with the message from
-the middleware.
+By default, a locked-out user sees the login form's usual error, as if the
+password were wrong.
 
-A login template must render the form's errors to show it.
+With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
+
+    Too many failed attempts. Try again later.
+
+If the password reset view below is in your URLs, the message also says that a
+reset link opened in the same browser lets them in.
+
+The message is a form error, raised from ``authenticate()`` as
+``django_device_cookies.exceptions.LockedOutError``. The admin and any form
+built on ``AuthenticationForm`` show it, as long as the template renders the
+form's errors. Code that calls ``authenticate()`` outside a form gets a 429
+response with the message as plain text.
 
 Password reset
 --------------
