@@ -204,7 +204,8 @@ For allauth's password reset code, with
     ),
 
 Email logins are matched to an account through its email field, so an extra
-address added through allauth is throttled separately.
+address added through allauth is throttled separately. Phone logins are not
+throttled.
 
 Signals
 -------

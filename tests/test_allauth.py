@@ -116,6 +116,15 @@ def test_unknown_email_is_throttled(client: Client, user: User) -> None:
     )
 
 
+def test_email_typed_as_the_username_shares_the_account(
+    client: Client, emailed: User
+) -> None:
+    assert logged_in(login(client, "alice@example.com"))
+    fail(Client())
+    assert logged_in(login(client, "alice@example.com"))
+    assert not logged_in(login(Client(), "alice@example.com"))
+
+
 def test_email_login_trusts_the_device(client: Client, emailed: User) -> None:
     assert logged_in(allauth_login(client, "alice@example.com"))
     fail(Client())

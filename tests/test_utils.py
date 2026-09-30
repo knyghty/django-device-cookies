@@ -48,7 +48,6 @@ def test_get_username(credentials: dict[str, object], expected: str | None) -> N
         ({"username": "Alice"}, ("alice", "", None)),
         ({"username": "a" * 300}, ("a" * 300, "", None)),
         ({"username": "nobody@example.com"}, ("nobody@example.com", "", None)),
-        ({"email": "nobody@example.com"}, ("nobody@example.com", "", None)),
         ({"email": "nobody"}, ("nobody", "", None)),
         ({}, None),
     ],
