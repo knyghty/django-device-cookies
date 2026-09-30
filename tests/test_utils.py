@@ -66,6 +66,8 @@ def test_find_user(user: User) -> None:
     assert utils.find_user("carol@example.com") == carol
     assert utils.find_user("nobody@example.com") is None
     assert utils.find_user("nobody") is None
+    create_user("dave@example.com")
+    assert utils.find_user("dave@example.com") is None
 
 
 def test_find_user_with_a_disputed_identifier(user: User) -> None:

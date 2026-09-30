@@ -48,13 +48,9 @@ def find_user(username: str) -> AbstractBaseUser | None:
     email = {f"{user_model.get_email_field_name()}__iexact": username}
     try:
         by_email = user_model._default_manager.get(**email)
-    except (ObjectDoesNotExist, FieldError):
-        return user
-    except MultipleObjectsReturned:
+    except (ObjectDoesNotExist, MultipleObjectsReturned, FieldError):
         return None
-    if user is None or user.pk == by_email.pk:
-        return by_email
-    return None
+    return by_email if user is None or user.pk == by_email.pk else None
 
 
 def get_cookie_name(username: str) -> str:

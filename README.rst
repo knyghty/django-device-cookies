@@ -210,8 +210,8 @@ For allauth's password reset code, with
 
 The email address is found only through the user model's email field.
 Allauth's email address model is not used.
-A username that is also another account's email address is never trusted and
-has its own lockout.
+A username that looks like an email address is trusted only when it is the
+account's own email address. Otherwise it has its own lockout.
 Logging in with a phone number is not throttled.
 
 Signals

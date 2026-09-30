@@ -5,6 +5,7 @@ from allauth.account.forms import default_token_generator
 from allauth.account.internal.flows.password_reset_by_code import (
     PASSWORD_RESET_VERIFICATION_SESSION_KEY,
 )
+from allauth.account.models import EmailAddress
 from allauth.account.utils import user_pk_to_url_str
 from django.contrib.auth.models import User
 from django.test import Client
@@ -122,17 +123,22 @@ def test_lockout_message_needs_the_limit_with_one_identifier(
     )
 
 
+@pytest.mark.parametrize("secondary", [False, True])
 def test_a_username_that_is_another_accounts_email_is_untrusted(
-    client: Client, emailed: User
+    client: Client, emailed: User, secondary: bool
 ) -> None:
-    User.objects.create_user("alice@example.com", password="other")
+    address = "alice@example.com"
+    if secondary:
+        address = "alice2@example.com"
+        EmailAddress.objects.create(user=emailed, email=address, verified=True)
+    User.objects.create_user(address, password="other")
     attacker = Client()
-    assert logged_in(allauth_login(attacker, "alice@example.com", "other"))
+    assert logged_in(allauth_login(attacker, address, "other"))
     client.cookies[COOKIE] = attacker.cookies[COOKIE].value
     for _ in range(LIMIT):
-        allauth_login(client, "alice@example.com", "wrong")
-    assert not logged_in(allauth_login(client, "alice@example.com"))
-    assert not logged_in(allauth_login(client, "alice@example.com", "other"))
+        allauth_login(client, address, "wrong")
+    assert not logged_in(allauth_login(client, address))
+    assert not logged_in(allauth_login(client, address, "other"))
     assert logged_in(login(Client(), "alice"))
 
 
