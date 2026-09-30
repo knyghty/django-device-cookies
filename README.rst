@@ -177,13 +177,12 @@ your URLs before ``include("django.contrib.auth.urls")``:
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
 
-With django-allauth, route the views in ``django_device_cookies.allauth``
-before ``include("allauth.urls")`` in the same way. The second one is for
-``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``:
+With django-allauth, route the matching view from
+``django_device_cookies.allauth`` before ``include("allauth.urls")`` instead.
+For allauth's reset link:
 
 .. code-block:: python
 
-    from django_device_cookies.allauth import ConfirmPasswordResetCodeView
     from django_device_cookies.allauth import PasswordResetFromKeyView
 
     re_path(
@@ -191,6 +190,13 @@ before ``include("allauth.urls")`` in the same way. The second one is for
         PasswordResetFromKeyView.as_view(),
         name="account_reset_password_from_key",
     ),
+
+With ``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``, for allauth's reset code:
+
+.. code-block:: python
+
+    from django_device_cookies.allauth import ConfirmPasswordResetCodeView
+
     path(
         "accounts/password/reset/confirm/",
         ConfirmPasswordResetCodeView.as_view(),
