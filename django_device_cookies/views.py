@@ -16,7 +16,11 @@ LOCKOUT_MESSAGE_WITH_RESET = gettext_lazy(
 )
 
 
-class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+class IssuesDeviceCookie:
+    pass
+
+
+class PasswordResetConfirmView(IssuesDeviceCookie, auth_views.PasswordResetConfirmView):
     def get(
         self, request: HttpRequest, *args: object, **kwargs: object
     ) -> HttpResponse:
@@ -30,9 +34,7 @@ def routes_reset_view(pattern: URLPattern | URLResolver) -> bool:
     if isinstance(pattern, URLResolver):
         return any(map(routes_reset_view, pattern.url_patterns))
     view_class = getattr(pattern.callback, "view_class", None)
-    return isinstance(view_class, type) and issubclass(
-        view_class, PasswordResetConfirmView
-    )
+    return isinstance(view_class, type) and issubclass(view_class, IssuesDeviceCookie)
 
 
 def get_lockout_message() -> str:

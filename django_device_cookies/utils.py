@@ -7,6 +7,7 @@ from typing import NamedTuple
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core import signing
+from django.core.exceptions import FieldError
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
@@ -33,15 +34,25 @@ def get_username(credentials: Mapping[str, object]) -> str | None:
     username = credentials.get("username")
     if username is None:
         username = credentials.get(get_user_model().USERNAME_FIELD)
+    if username is None:
+        username = credentials.get("email", credentials.get("phone"))
     if username is None or username == MASK:
         return None
     return str(username)
 
 
 def find_user(username: str) -> AbstractBaseUser | None:
+    user_model = get_user_model()
     try:
-        return get_user_model()._default_manager.get_by_natural_key(username)
+        return user_model._default_manager.get_by_natural_key(username)
     except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
+        pass
+    if "@" not in username:
+        return None
+    email = {f"{user_model.get_email_field_name()}__iexact": username}
+    try:
+        return user_model._default_manager.get(**email)
+    except (ObjectDoesNotExist, MultipleObjectsReturned, FieldError):
         return None
 
 

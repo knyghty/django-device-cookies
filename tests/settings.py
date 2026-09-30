@@ -16,13 +16,20 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.messages",
     "django.contrib.sessions",
+    "allauth",
+    "allauth.account",
 ]
+
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
+ACCOUNT_RATE_LIMITS = False
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django_device_cookies.middleware.DeviceCookieMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 DEVICE_COOKIE_HIDE_LOCKOUTS = False

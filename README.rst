@@ -176,6 +176,19 @@ your URLs before ``include("django.contrib.auth.urls")``:
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
 
+With django-allauth, route ``django_device_cookies.allauth.PasswordResetFromKeyView``
+before ``include("allauth.urls")`` in the same way:
+
+.. code-block:: python
+
+    from django_device_cookies.allauth import PasswordResetFromKeyView
+
+    re_path(
+        r"^accounts/password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$",
+        PasswordResetFromKeyView.as_view(),
+        name="account_reset_password_from_key",
+    ),
+
 Signals
 -------
 
