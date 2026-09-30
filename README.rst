@@ -236,6 +236,8 @@ Limitations
 - The throttle covers only calls to ``authenticate()`` and
   ``aauthenticate()``. Calls without a request count as untrusted.
 - Attempts sent in parallel can exceed the limit.
+- A login by email counts against the account whose email field matches. A
+  login by a secondary address in allauth is throttled on its own.
 
 System checks
 -------------

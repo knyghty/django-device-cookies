@@ -35,19 +35,19 @@ def get_username(credentials: Mapping[str, object]) -> str | None:
     if username is None:
         username = credentials.get(get_user_model().USERNAME_FIELD)
     if username is None:
-        username = credentials.get("email", credentials.get("phone"))
+        username = credentials.get("email")
     if username is None or username == MASK:
         return None
     return str(username)
 
 
-def find_user(username: str) -> AbstractBaseUser | None:
+def find_user(username: str, by_email: bool = False) -> AbstractBaseUser | None:
     user_model = get_user_model()
     try:
         return user_model._default_manager.get_by_natural_key(username)
     except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
         pass
-    if "@" not in username:
+    if not by_email or "@" not in username:
         return None
     email = {f"{user_model.get_email_field_name()}__iexact": username}
     try:
@@ -102,7 +102,7 @@ def get_bucket(
     username = get_username(credentials)
     if username is None:
         return None
-    user = find_user(username)
+    user = find_user(username, by_email="email" in credentials)
     key = normalize_username(user.get_username() if user else username)
     device = get_device(request, user)
     if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):

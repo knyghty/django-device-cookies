@@ -23,7 +23,6 @@ INSTALLED_APPS = [
 ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
 ACCOUNT_RATE_LIMITS = False
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
