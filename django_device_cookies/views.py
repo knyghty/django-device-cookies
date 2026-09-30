@@ -12,7 +12,7 @@ from . import utils
 LOCKOUT_MESSAGE = gettext_lazy("Too many failed attempts. Try again later.")
 LOCKOUT_MESSAGE_WITH_RESET = gettext_lazy(
     "Too many failed attempts. Try again later, or request a password reset and "
-    "open the link in this browser. You do not need to change your password."
+    "confirm it in this browser. You do not need to change your password."
 )
 
 

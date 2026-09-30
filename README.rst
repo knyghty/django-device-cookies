@@ -145,8 +145,8 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 
     Too many failed attempts. Try again later.
 
-If the password reset view below is in your URLs, the message also says that
-using a password reset link opened in the same browser will clear the lockout.
+If a password reset view below is in your URLs, the message also says that
+confirming a password reset in the same browser will clear the lockout.
 
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
@@ -176,17 +176,24 @@ your URLs before ``include("django.contrib.auth.urls")``:
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
 
-With django-allauth, route ``django_device_cookies.allauth.PasswordResetFromKeyView``
-before ``include("allauth.urls")`` in the same way:
+With django-allauth, route the views in ``django_device_cookies.allauth``
+before ``include("allauth.urls")`` in the same way. The second one is for
+``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``:
 
 .. code-block:: python
 
+    from django_device_cookies.allauth import ConfirmPasswordResetCodeView
     from django_device_cookies.allauth import PasswordResetFromKeyView
 
     re_path(
         r"^accounts/password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$",
         PasswordResetFromKeyView.as_view(),
         name="account_reset_password_from_key",
+    ),
+    path(
+        "accounts/password/reset/confirm/",
+        ConfirmPasswordResetCodeView.as_view(),
+        name="account_confirm_password_reset_code",
     ),
 
 Signals

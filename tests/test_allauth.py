@@ -2,6 +2,9 @@ from http import HTTPStatus
 
 import pytest
 from allauth.account.forms import default_token_generator
+from allauth.account.internal.flows.password_reset_by_code import (
+    PASSWORD_RESET_VERIFICATION_SESSION_KEY,
+)
 from allauth.account.utils import user_pk_to_url_str
 from django.contrib.auth.models import User
 from django.test import Client
@@ -56,6 +59,27 @@ def test_reopening_a_key_link_gives_the_same_device(client: Client, user: User) 
     first = read_payload(client.get(link, follow=True).cookies[COOKIE].value)
     again = read_payload(client.get(link, follow=True).cookies[COOKIE].value)
     assert first["n"] == again["n"]
+
+
+def test_reset_code_trusts_the_device(client: Client, emailed: User) -> None:
+    fail(Client())
+    client.post(reverse("account_reset_password"), {"email": "alice@example.com"})
+    code = client.session[PASSWORD_RESET_VERIFICATION_SESSION_KEY]["code"]
+    response = client.post(
+        reverse("account_confirm_password_reset_code"), {"code": code}
+    )
+    assert response.status_code == HTTPStatus.FOUND
+    assert read_payload(response.cookies[COOKIE].value)["u"] == "alice"
+    assert logged_in(login(client))
+
+
+def test_wrong_reset_code_issues_nothing(client: Client, emailed: User) -> None:
+    client.post(reverse("account_reset_password"), {"email": "alice@example.com"})
+    response = client.post(
+        reverse("account_confirm_password_reset_code"), {"code": "nope"}
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert COOKIE not in response.cookies
 
 
 def test_invalid_key_issues_nothing(client: Client, user: User) -> None:

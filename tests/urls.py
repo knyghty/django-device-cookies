@@ -10,6 +10,7 @@ from django.urls import path
 from django.urls import re_path
 from django.views.decorators.csrf import csrf_exempt
 
+from django_device_cookies.allauth import ConfirmPasswordResetCodeView
 from django_device_cookies.allauth import PasswordResetFromKeyView
 from django_device_cookies.views import PasswordResetConfirmView
 
@@ -48,6 +49,11 @@ urlpatterns = [
         r"^accounts/password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$",
         PasswordResetFromKeyView.as_view(),
         name="account_reset_password_from_key",
+    ),
+    path(
+        "accounts/password/reset/confirm/",
+        ConfirmPasswordResetCodeView.as_view(),
+        name="account_confirm_password_reset_code",
     ),
     path("accounts/", include("allauth.urls")),
     path("login/", auth_views.LoginView.as_view(), name="login"),

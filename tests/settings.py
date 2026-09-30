@@ -21,6 +21,7 @@ INSTALLED_APPS = [
 ]
 
 ACCOUNT_LOGIN_METHODS = {"email", "username"}
+ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
 ACCOUNT_RATE_LIMITS = False
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 
@@ -33,6 +34,8 @@ MIDDLEWARE = [
 ]
 
 DEVICE_COOKIE_HIDE_LOCKOUTS = False
+
+MAILERS = {"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}}
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
