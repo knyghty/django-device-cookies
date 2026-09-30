@@ -204,9 +204,9 @@ For allauth's password reset code, with
     ),
 
 The throttle finds the account for an email address through the user model's
-email field. It does not know about the extra addresses or the phone numbers
-that allauth lets people log in with, so those are throttled per address or
-number typed, and a phone number alone is not throttled at all.
+email field. It does not know about the extra addresses that allauth lets
+people add, so those are throttled per address typed. Logging in with a phone
+number is not throttled.
 
 Signals
 -------
