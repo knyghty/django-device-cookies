@@ -1,9 +1,16 @@
+from unittest import mock
+
 import pytest
+from allauth.account.models import EmailAddress
+from django.apps import apps
 from django.contrib.auth.models import User
+from django.contrib.auth.models import UserManager
 from django.core import signing
+from django.core.exceptions import MultipleObjectsReturned
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.test import RequestFactory
+from pytest_django.fixtures import Settings
 
 from django_device_cookies import utils
 
@@ -61,13 +68,13 @@ def test_get_bucket(
 def test_find_user(user: User) -> None:
     User.objects.filter(pk=user.pk).update(email="alice@example.com")
     carol = User.objects.create_user("carol@example.com", email="carol@example.com")
+    dave = create_user("dave@example.com")
     assert utils.find_user("alice") == user
     assert utils.find_user("Alice@Example.com") == user
     assert utils.find_user("carol@example.com") == carol
+    assert utils.find_user("dave@example.com") == dave
     assert utils.find_user("nobody@example.com") is None
     assert utils.find_user("nobody") is None
-    create_user("dave@example.com")
-    assert utils.find_user("dave@example.com") is None
 
 
 def test_find_user_with_a_disputed_identifier(user: User) -> None:
@@ -76,6 +83,43 @@ def test_find_user_with_a_disputed_identifier(user: User) -> None:
     assert utils.find_user("alice@example.com") is None
     User.objects.update(email="alice@example.com")
     assert utils.find_user("alice@example.com") is None
+
+
+def test_find_user_resolves_an_address_like_allauth(user: User) -> None:
+    address = EmailAddress.objects.create(
+        user=user, email="alice2@example.com", verified=True
+    )
+    User.objects.create_user("mallory", email="alice2@example.com")
+    assert utils.find_user("alice2@example.com") == user
+    address.verified = False
+    address.save()
+    assert utils.find_user("alice2@example.com") is None
+
+
+def test_find_user_follows_allauth_login_methods(
+    user: User, settings: Settings
+) -> None:
+    User.objects.filter(pk=user.pk).update(email="alice@example.com")
+    settings.ACCOUNT_LOGIN_METHODS = {"username"}
+    assert utils.find_user("alice@example.com") is None
+    assert utils.find_user("ALICE") == user
+    settings.ACCOUNT_LOGIN_METHODS = {"email"}
+    assert utils.find_user("alice@example.com") == user
+    assert utils.find_user("ALICE") is None
+
+
+def test_find_user_without_allauth(user: User) -> None:
+    User.objects.filter(pk=user.pk).update(email="alice@example.com")
+    with mock.patch.object(apps, "is_installed", return_value=False):
+        assert utils.find_user("alice") == user
+        assert utils.find_user("alice@example.com") is None
+
+
+def test_find_user_with_a_duplicated_username(user: User) -> None:
+    with mock.patch.object(
+        UserManager, "get_by_natural_key", side_effect=MultipleObjectsReturned
+    ):
+        assert utils.find_user("alice") is None
 
 
 def issue_cookie(user: User) -> str:

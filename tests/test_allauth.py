@@ -142,6 +142,20 @@ def test_a_username_that_is_another_accounts_email_is_untrusted(
     assert logged_in(login(Client(), "alice"))
 
 
+def test_another_accounts_email_field_does_not_key_the_bucket(
+    client: Client, emailed: User
+) -> None:
+    EmailAddress.objects.create(user=emailed, email="alice2@example.com", verified=True)
+    User.objects.create_user("mallory", email="alice2@example.com", password="other")
+    attacker = Client()
+    assert logged_in(allauth_login(attacker, "mallory", "other"))
+    client.cookies[COOKIE] = attacker.cookies[COOKIE].value
+    for _ in range(LIMIT):
+        allauth_login(client, "alice2@example.com", "wrong")
+    assert not logged_in(allauth_login(client, "alice2@example.com"))
+    assert not logged_in(login(Client(), "alice"))
+
+
 def test_unknown_email_is_throttled(client: Client, user: User) -> None:
     for _ in range(5):
         allauth_login(client, "nobody@example.com", "wrong")

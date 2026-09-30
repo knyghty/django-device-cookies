@@ -208,11 +208,10 @@ For allauth's password reset code, with
         name="account_confirm_password_reset_code",
     ),
 
-The email address is found only through the user model's email field.
-Allauth's email address model is not used.
-A username that looks like an email address is trusted only when it is the
-account's own email address. Any other email-shaped username never trusts a
-device cookie, and its failed attempts count against the address rather than
+The package finds the account for an email address the way allauth does, and
+prefers a verified address. An identifier that reaches more than one account,
+such as a username that is also another account's email address, never trusts
+a device cookie. Its failed attempts count against the identifier rather than
 against an account.
 Logging in with a phone number is not throttled.
 

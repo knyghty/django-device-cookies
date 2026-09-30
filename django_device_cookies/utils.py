@@ -2,10 +2,10 @@ import hashlib
 import secrets
 from collections.abc import Mapping
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core import signing
-from django.core.exceptions import FieldError
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
@@ -37,20 +37,34 @@ def get_username(credentials: Mapping[str, object]) -> str | None:
     return str(username)
 
 
+def find_allauth_users(username: str) -> list[AbstractBaseUser]:
+    from allauth.account import app_settings
+    from allauth.account.app_settings import LoginMethod
+    from allauth.account.utils import filter_users_by_email
+    from allauth.account.utils import filter_users_by_username
+
+    users: list[AbstractBaseUser] = []
+    if LoginMethod.EMAIL in app_settings.LOGIN_METHODS:
+        users += filter_users_by_email(username, prefer_verified=True)
+    if (
+        LoginMethod.USERNAME in app_settings.LOGIN_METHODS
+        and app_settings.USER_MODEL_USERNAME_FIELD
+    ):
+        users += filter_users_by_username(username)
+    return users
+
+
 def find_user(username: str) -> AbstractBaseUser | None:
-    user_model = get_user_model()
     try:
-        user = user_model._default_manager.get_by_natural_key(username)
-    except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
-        user = None
-    if "@" not in username:
-        return user
-    email = {f"{user_model.get_email_field_name()}__iexact": username}
-    try:
-        by_email = user_model._default_manager.get(**email)
-    except (ObjectDoesNotExist, MultipleObjectsReturned, FieldError):
+        users = [get_user_model()._default_manager.get_by_natural_key(username)]
+    except (ObjectDoesNotExist, ValidationError, ValueError):
+        users = []
+    except MultipleObjectsReturned:
         return None
-    return by_email if user is None or user.pk == by_email.pk else None
+    if apps.is_installed("allauth.account"):
+        users += find_allauth_users(username)
+    found = list({user.pk: user for user in users}.values())
+    return found[0] if len(found) == 1 else None
 
 
 def get_cookie_name(username: str) -> str:
