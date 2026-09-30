@@ -145,8 +145,9 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 
     Too many failed attempts. Try again later.
 
-If a password reset view below is in your URLs, the message also says that
-confirming a password reset in the same browser will clear the lockout.
+If this package's password reset view for Django or for allauth is in your
+URLs, the message also says that confirming a password reset in the same
+browser will clear the lockout.
 
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
