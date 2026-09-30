@@ -145,9 +145,8 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 
     Too many failed attempts. Try again later.
 
-If this package's password reset view for Django or for allauth is in your
-URLs, the message also says that confirming a password reset in the same
-browser will clear the lockout.
+If you add one of the package's password reset views, the message also says
+that confirming a password reset in the same browser will clear the lockout.
 
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
@@ -162,8 +161,10 @@ An attacker can keep the untrusted lockout for an account in place, which
 blocks its user from logging in from a new device. OWASP suggests issuing a
 device cookie when the user visits a password reset link, since that proves
 possession of the email account. An actual password reset is not necessary.
-``django_device_cookies.views.PasswordResetConfirmView`` does this. Add it to
-your URLs before ``include("django.contrib.auth.urls")``:
+The package's password reset views do this. Add the one for your login flow to
+your URLs, before the include that provides the flow.
+
+For Django's password reset link:
 
 .. code-block:: python
 
@@ -177,9 +178,7 @@ your URLs before ``include("django.contrib.auth.urls")``:
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
 
-With django-allauth, route the matching view from
-``django_device_cookies.allauth`` before ``include("allauth.urls")`` instead.
-For allauth's reset link:
+For allauth's password reset link:
 
 .. code-block:: python
 
@@ -191,7 +190,8 @@ For allauth's reset link:
         name="account_reset_password_from_key",
     ),
 
-With ``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``, for allauth's reset code:
+For allauth's password reset code, with
+``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``:
 
 .. code-block:: python
 
