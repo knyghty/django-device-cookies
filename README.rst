@@ -211,7 +211,9 @@ For allauth's password reset code, with
 The email address is found only through the user model's email field.
 Allauth's email address model is not used.
 A username that looks like an email address is trusted only when it is the
-account's own email address. Otherwise it has its own lockout.
+account's own email address. Any other email-shaped username never trusts a
+device cookie, and its failed attempts count against the address rather than
+against an account.
 Logging in with a phone number is not throttled.
 
 Signals
