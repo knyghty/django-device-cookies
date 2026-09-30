@@ -1,9 +1,8 @@
 import hashlib
 import secrets
-import unicodedata
 from collections.abc import Mapping
-from typing import NamedTuple
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core import signing
@@ -16,8 +15,10 @@ from django.views.decorators.debug import sensitive_variables
 
 from . import config
 from .models import NONCE_LENGTH
+from .models import Bucket
 from .models import FailedAuthenticationAttempt
 from .models import hash_username
+from .models import normalize_username
 
 SALT = "django_device_cookies"
 META_KEY = "DEVICE_COOKIE_AUTH"
@@ -25,24 +26,45 @@ BUCKET_KEY = "DEVICE_COOKIE_AUTH_BUCKET"
 MASK = "*" * 20
 
 
-def normalize_username(username: object) -> str:
-    return unicodedata.normalize("NFKC", str(username)).casefold()
-
-
 def get_username(credentials: Mapping[str, object]) -> str | None:
     username = credentials.get("username")
     if username is None:
         username = credentials.get(get_user_model().USERNAME_FIELD)
+    if username is None:
+        username = credentials.get("email")
     if username is None or username == MASK:
         return None
     return str(username)
 
 
+def find_allauth_users(username: str) -> list[AbstractBaseUser]:
+    from allauth.account import app_settings
+    from allauth.account.app_settings import LoginMethod
+    from allauth.account.utils import filter_users_by_email
+    from allauth.account.utils import filter_users_by_username
+
+    users: list[AbstractBaseUser] = []
+    if LoginMethod.EMAIL in app_settings.LOGIN_METHODS:
+        users += filter_users_by_email(username, prefer_verified=True)
+    if (
+        LoginMethod.USERNAME in app_settings.LOGIN_METHODS
+        and app_settings.USER_MODEL_USERNAME_FIELD
+    ):
+        users += filter_users_by_username(username)
+    return users
+
+
 def find_user(username: str) -> AbstractBaseUser | None:
     try:
-        return get_user_model()._default_manager.get_by_natural_key(username)
-    except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
+        users = [get_user_model()._default_manager.get_by_natural_key(username)]
+    except (ObjectDoesNotExist, ValidationError, ValueError):
+        users = []
+    except MultipleObjectsReturned:
         return None
+    if apps.is_installed("allauth.account"):
+        users += find_allauth_users(username)
+    found = list({user.pk: user for user in users}.values())
+    return found[0] if len(found) == 1 else None
 
 
 def get_cookie_name(username: str) -> str:
@@ -78,12 +100,6 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     return nonce if payload == build_payload(user, nonce) else ""
 
 
-class Bucket(NamedTuple):
-    username: str
-    device: str
-    user: AbstractBaseUser | None = None
-
-
 @sensitive_variables()
 def get_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
@@ -92,11 +108,10 @@ def get_bucket(
     if username is None:
         return None
     user = find_user(username)
-    key = normalize_username(user.get_username() if user else username)
-    device = get_device(request, user)
-    if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
-        device = ""
-    return Bucket(key, device, user)
+    bucket = Bucket(normalize_username(username), get_device(request, user), user)
+    if bucket.device and FailedAuthenticationAttempt.objects.is_revoked(bucket):
+        return bucket._replace(device="")
+    return bucket
 
 
 @sensitive_variables()

@@ -26,9 +26,11 @@ def gate(request: HttpRequest | None, credentials: dict[str, object]) -> None:
     bucket = utils.get_bucket(request, credentials)
     utils.stash_bucket(request, credentials, bucket)
     attempts = FailedAuthenticationAttempt.objects
-    if not bucket or not attempts.is_locked_out(bucket.username, bucket.device):
+    if not bucket or not attempts.is_locked_out(bucket):
         return
-    if not config.DEVICE_COOKIE_HIDE_LOCKOUTS:
+    if not config.DEVICE_COOKIE_HIDE_LOCKOUTS and attempts.is_identifier_locked_out(
+        bucket
+    ):
         utils.pop_bucket(request, credentials)
         raise LockedOutError(views.get_lockout_message(), code="locked_out")
     hash_password(credentials)

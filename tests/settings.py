@@ -16,16 +16,25 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.messages",
     "django.contrib.sessions",
+    "allauth",
+    "allauth.account",
 ]
+
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
+ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
+ACCOUNT_RATE_LIMITS = False
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django_device_cookies.middleware.DeviceCookieMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 DEVICE_COOKIE_HIDE_LOCKOUTS = False
+
+MAILERS = {"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}}
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 

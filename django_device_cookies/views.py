@@ -12,11 +12,15 @@ from . import utils
 LOCKOUT_MESSAGE = gettext_lazy("Too many failed attempts. Try again later.")
 LOCKOUT_MESSAGE_WITH_RESET = gettext_lazy(
     "Too many failed attempts. Try again later, or request a password reset and "
-    "open the link in this browser. You do not need to change your password."
+    "confirm it in this browser. You do not need to change your password."
 )
 
 
-class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+class IssuesDeviceCookie:
+    pass
+
+
+class PasswordResetConfirmView(IssuesDeviceCookie, auth_views.PasswordResetConfirmView):
     def get(
         self, request: HttpRequest, *args: object, **kwargs: object
     ) -> HttpResponse:
@@ -30,9 +34,7 @@ def routes_reset_view(pattern: URLPattern | URLResolver) -> bool:
     if isinstance(pattern, URLResolver):
         return any(map(routes_reset_view, pattern.url_patterns))
     view_class = getattr(pattern.callback, "view_class", None)
-    return isinstance(view_class, type) and issubclass(
-        view_class, PasswordResetConfirmView
-    )
+    return isinstance(view_class, type) and issubclass(view_class, IssuesDeviceCookie)
 
 
 def get_lockout_message() -> str:

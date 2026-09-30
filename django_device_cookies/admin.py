@@ -2,12 +2,13 @@ from collections.abc import Sequence
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from . import utils
 from .models import FailedAuthenticationAttempt
 from .models import hash_username
+from .models import normalize_username
 
 SEARCH_PREFIXES = "^=@"
 
@@ -45,6 +46,6 @@ class FailedAuthenticationAttemptAdmin(admin.ModelAdmin):
     ) -> tuple[QuerySet, bool]:
         matches, duplicates = super().get_search_results(request, queryset, search_term)
         if search_term:
-            key = hash_username(utils.normalize_username(search_term))
-            matches |= queryset.filter(key=key)
+            key = hash_username(normalize_username(search_term))
+            matches |= queryset.filter(Q(key=key) | Q(identifier=key))
         return matches, duplicates

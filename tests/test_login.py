@@ -27,6 +27,7 @@ from django_device_cookies import utils
 from django_device_cookies.backends import DeviceCookieBackend
 from django_device_cookies.exceptions import LockedOutError
 from django_device_cookies.models import NONCE_LENGTH
+from django_device_cookies.models import Bucket
 from django_device_cookies.models import FailedAuthenticationAttempt
 from django_device_cookies.models import hash_username
 from django_device_cookies.signals import lockout
@@ -127,7 +128,7 @@ def test_unknown_usernames_are_throttled_like_real_ones(
 ) -> None:
     fail(client, LIMIT + 2, username="nobody")
     assert count_attempts(username="nobody", device="") == LIMIT
-    assert FailedAuthenticationAttempt.objects.is_locked_out("nobody", "")
+    assert FailedAuthenticationAttempt.objects.is_locked_out(Bucket("nobody", ""))
     fail(client)
     unknown = attempt(client, username="nobody").context["form"]
     known = attempt(client).context["form"]
@@ -248,8 +249,8 @@ def test_spellings_that_reach_one_account_share_its_bucket(
     with mock.patch.object(UserManager, "get_by_natural_key", by_accent_insensitive):
         for spelling in ["alicé", "álice", "alicè", "àlice", "alíce"]:
             attempt(client, spelling)
+        assert count_attempts(username="alice", device="") == LIMIT
         assert not logged_in(login(client))
-    assert count_attempts(username="alice", device="") == LIMIT
 
 
 def test_expired_cookie_is_untrusted(client: Client, trusted: Client) -> None:
@@ -342,7 +343,7 @@ def test_stale_stash_is_ignored_for_another_username(
     user: User, rf: RequestFactory
 ) -> None:
     request = rf.get("/")
-    utils.stash_bucket(request, {"username": "alice"}, utils.Bucket("alice", "x" * 32))
+    utils.stash_bucket(request, {"username": "alice"}, Bucket("alice", "x" * 32))
     user_login_failed.send(
         sender=None, credentials={"username": "bob"}, request=request
     )

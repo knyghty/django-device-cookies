@@ -40,7 +40,7 @@ Homepage = "https://github.com/knyghty/django-device-cookies"
 Repository = "https://github.com/knyghty/django-device-cookies"
 
 [dependency-groups]
-dev = ["coverage[toml]", "prek", "pytest", "pytest-django", "ty"]
+dev = ["coverage[toml]", "django-allauth", "prek", "pytest", "pytest-django", "ty"]
 
 [tool.coverage.run]
 branch = true
@@ -98,6 +98,7 @@ ignore = ["RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
 "django_device_cookies/apps.py" = ["PLC0415"]
+"django_device_cookies/utils.py" = ["PLC0415"]
 "tests/*" = ["S101", "S105", "S106", "S107"]
 
 [tool.ruff.lint.isort]

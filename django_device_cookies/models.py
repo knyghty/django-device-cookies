@@ -1,5 +1,7 @@
 import datetime
 import hashlib
+import unicodedata
+from typing import NamedTuple
 
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -12,6 +14,10 @@ KEY_LENGTH = 64
 NONCE_LENGTH = 32
 
 
+def normalize_username(username: object) -> str:
+    return unicodedata.normalize("NFKC", str(username)).casefold()
+
+
 def hash_username(username: str) -> str:
     return hashlib.sha256(username.encode()).hexdigest()
 
@@ -20,17 +26,31 @@ def get_cutoff(age: datetime.timedelta) -> models.Expression:
     return Now() - models.Value(age, output_field=models.DurationField())
 
 
-class FailedAuthenticationAttemptQuerySet(models.QuerySet):
-    def filter_bucket(
-        self, username: str, device: str
-    ) -> "FailedAuthenticationAttemptQuerySet":
-        return self.filter(key=hash_username(username), device=device)
+class Bucket(NamedTuple):
+    identifier: str
+    device: str
+    user: AbstractBaseUser | None = None
 
-    def filter_recent(
-        self, username: str, device: str
-    ) -> "FailedAuthenticationAttemptQuerySet":
+    @property
+    def username(self) -> str:
+        if self.user is None:
+            return self.identifier
+        return normalize_username(self.user.get_username())
+
+
+class FailedAuthenticationAttemptQuerySet(models.QuerySet):
+    def filter_bucket(self, bucket: Bucket) -> "FailedAuthenticationAttemptQuerySet":
+        return self.filter(key=hash_username(bucket.username), device=bucket.device)
+
+    def filter_recent(self, bucket: Bucket) -> "FailedAuthenticationAttemptQuerySet":
         cutoff = get_cutoff(config.DEVICE_COOKIE_PERIOD)
-        return self.filter_bucket(username, device).filter(time__gt=cutoff)
+        return self.filter_bucket(bucket).filter(time__gt=cutoff)
+
+    def filter_identifier(
+        self, bucket: Bucket
+    ) -> "FailedAuthenticationAttemptQuerySet":
+        identifier = hash_username(bucket.identifier)
+        return self.filter_recent(bucket).filter(identifier=identifier)
 
     def filter_stale(self) -> "FailedAuthenticationAttemptQuerySet":
         stale = models.Q(time__lte=get_cutoff(config.DEVICE_COOKIE_PERIOD))
@@ -39,27 +59,39 @@ class FailedAuthenticationAttemptQuerySet(models.QuerySet):
             stale = (stale & models.Q(device="")) | models.Q(time__lte=expired)
         return self.filter(stale)
 
-    def is_locked_out(self, username: str, device: str) -> bool:
-        count = self.filter_recent(username, device).count()
+    def is_locked_out(self, bucket: Bucket) -> bool:
+        count = self.filter_recent(bucket).count()
         return count >= config.DEVICE_COOKIE_ATTEMPTS_PER_PERIOD
 
-    def is_revoked(self, username: str, device: str) -> bool:
+    def is_identifier_locked_out(self, bucket: Bucket) -> bool:
+        count = self.filter_identifier(bucket).count()
+        return count >= config.DEVICE_COOKIE_ATTEMPTS_PER_PERIOD
+
+    def is_revoked(self, bucket: Bucket) -> bool:
         limit = config.DEVICE_COOKIE_REVOKE_AFTER_FAILURES
         if not limit:
             return False
-        return self.filter_bucket(username, device).count() >= limit
+        return self.filter_bucket(bucket).count() >= limit
 
-    def record_failure(
-        self, username: str, device: str, user: AbstractBaseUser | None = None
-    ) -> bool:
-        if self.is_locked_out(username, device):
+    def record_failure(self, bucket: Bucket) -> bool:
+        identifier = hash_username(bucket.identifier)
+        recent = self.filter_recent(bucket).values_list("identifier", flat=True)
+        identifiers = list(recent)
+        limit = config.DEVICE_COOKIE_ATTEMPTS_PER_PERIOD
+        if identifiers.count(identifier) >= limit:
             return False
-        self.create(key=hash_username(username), device=device, user=user)
-        return self.is_locked_out(username, device)
+        self.create(
+            key=hash_username(bucket.username),
+            identifier=identifier,
+            device=bucket.device,
+            user=bucket.user,
+        )
+        return len(identifiers) + 1 == limit
 
 
 class FailedAuthenticationAttempt(models.Model):
     key = models.CharField(max_length=KEY_LENGTH)
+    identifier = models.CharField(max_length=KEY_LENGTH)
     device = models.CharField(max_length=NONCE_LENGTH, blank=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

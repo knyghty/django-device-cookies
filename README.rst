@@ -145,8 +145,13 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 
     Too many failed attempts. Try again later.
 
-If the password reset view below is in your URLs, the message also says that
-using a password reset link opened in the same browser will clear the lockout.
+If you add one of the package's password reset views, the message also says
+that confirming a password reset in the same browser will clear the lockout.
+
+The message needs the limit reached with one identifier. Attempts with another
+identifier for the same account, such as its email address, fail like a wrong
+password until that identifier reaches the limit too. This keeps the message
+from revealing which email address belongs to a username.
 
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
@@ -161,8 +166,10 @@ An attacker can keep the untrusted lockout for an account in place, which
 blocks its user from logging in from a new device. OWASP suggests issuing a
 device cookie when the user visits a password reset link, since that proves
 possession of the email account. An actual password reset is not necessary.
-``django_device_cookies.views.PasswordResetConfirmView`` does this. Add it to
-your URLs before ``include("django.contrib.auth.urls")``:
+The package's password reset views do this. Add the one for your login flow to
+your URLs, before the include that provides the flow.
+
+For Django's password reset link:
 
 .. code-block:: python
 
@@ -175,6 +182,38 @@ your URLs before ``include("django.contrib.auth.urls")``:
     ),
 
 It renders ``registration/password_reset_confirm.html``, like Django's view.
+
+For allauth's password reset link:
+
+.. code-block:: python
+
+    from django_device_cookies.allauth import PasswordResetFromKeyView
+
+    re_path(
+        r"^accounts/password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$",
+        PasswordResetFromKeyView.as_view(),
+        name="account_reset_password_from_key",
+    ),
+
+For allauth's password reset code, with
+``ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED``:
+
+.. code-block:: python
+
+    from django_device_cookies.allauth import ConfirmPasswordResetCodeView
+
+    path(
+        "accounts/password/reset/confirm/",
+        ConfirmPasswordResetCodeView.as_view(),
+        name="account_confirm_password_reset_code",
+    ),
+
+The package finds the account for an email address the way allauth does, and
+prefers a verified address. An identifier that reaches more than one account,
+such as a username that is also another account's email address, never trusts
+a device cookie. Its failed attempts count against the identifier rather than
+against an account.
+Logging in with a phone number is not throttled.
 
 Signals
 -------
