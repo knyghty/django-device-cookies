@@ -33,16 +33,15 @@ def record_failure(
     bucket = utils.pop_bucket(request, credentials)
     if bucket is None:
         return
-    username, device, user = bucket
     attempts = FailedAuthenticationAttempt.objects
-    if attempts.record_failure(username, device, user):
-        clients = "device" if device else "untrusted clients"
-        logger.warning("Locked out %s for username %r.", clients, username)
+    if attempts.record_failure(bucket):
+        clients = "device" if bucket.device else "untrusted clients"
+        logger.warning("Locked out %s for username %r.", clients, bucket.username)
         lockout.send(
             sender=FailedAuthenticationAttempt,
-            username=username,
-            device=device,
+            username=bucket.username,
+            device=bucket.device,
             request=request,
         )
-    if device and attempts.is_revoked(username, device):
-        logger.warning("Revoked a device of username %r.", username)
+    if bucket.device and attempts.is_revoked(bucket):
+        logger.warning("Revoked a device of username %r.", bucket.username)

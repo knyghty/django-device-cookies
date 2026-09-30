@@ -58,6 +58,24 @@ def test_get_bucket(
     assert utils.get_bucket(None, credentials) == expected
 
 
+def test_find_user(user: User) -> None:
+    User.objects.filter(pk=user.pk).update(email="alice@example.com")
+    carol = User.objects.create_user("carol@example.com", email="carol@example.com")
+    assert utils.find_user("alice") == user
+    assert utils.find_user("Alice@Example.com") == user
+    assert utils.find_user("carol@example.com") == carol
+    assert utils.find_user("nobody@example.com") is None
+    assert utils.find_user("nobody") is None
+
+
+def test_find_user_with_a_disputed_identifier(user: User) -> None:
+    User.objects.filter(pk=user.pk).update(email="alice@example.com")
+    create_user("alice@example.com")
+    assert utils.find_user("alice@example.com") is None
+    User.objects.update(email="alice@example.com")
+    assert utils.find_user("alice@example.com") is None
+
+
 def issue_cookie(user: User) -> str:
     response = HttpResponse()
     utils.issue_device_cookie(response, utils.build_payload(user))

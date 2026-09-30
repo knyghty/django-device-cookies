@@ -13,6 +13,7 @@ from pytest_django.fixtures import Settings
 
 from .helpers import COOKIE
 from .helpers import GATE
+from .helpers import LIMIT
 from .helpers import PASSWORD
 from .helpers import Response
 from .helpers import fail
@@ -102,10 +103,37 @@ def test_email_login_is_throttled_per_account(client: Client, emailed: User) -> 
         allauth_login(client, "Alice@Example.com", "wrong")
     for _ in range(2):
         allauth_login(client, "alice", "wrong")
+    assert not logged_in(allauth_login(client, "alice@example.com"))
+    assert not logged_in(allauth_login(client, "alice"))
+
+
+def test_lockout_message_needs_the_limit_with_one_identifier(
+    client: Client, emailed: User
+) -> None:
+    fail(client)
+    response = allauth_login(client, "alice@example.com")
+    assert not logged_in(response)
+    assert "Too many failed attempts." not in response.text
+    for _ in range(LIMIT - 1):
+        response = allauth_login(client, "alice@example.com", "wrong")
+        assert "Too many failed attempts." not in response.text
     assert (
         "Too many failed attempts." in allauth_login(client, "alice@example.com").text
     )
-    assert "Too many failed attempts." in allauth_login(client, "alice").text
+
+
+def test_a_username_that_is_another_accounts_email_is_untrusted(
+    client: Client, emailed: User
+) -> None:
+    User.objects.create_user("alice@example.com", password="other")
+    attacker = Client()
+    assert logged_in(allauth_login(attacker, "alice@example.com", "other"))
+    client.cookies[COOKIE] = attacker.cookies[COOKIE].value
+    for _ in range(LIMIT):
+        allauth_login(client, "alice@example.com", "wrong")
+    assert not logged_in(allauth_login(client, "alice@example.com"))
+    assert not logged_in(allauth_login(client, "alice@example.com", "other"))
+    assert logged_in(login(Client(), "alice"))
 
 
 def test_unknown_email_is_throttled(client: Client, user: User) -> None:

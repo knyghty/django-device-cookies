@@ -1,8 +1,6 @@
 import hashlib
 import secrets
-import unicodedata
 from collections.abc import Mapping
-from typing import NamedTuple
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -17,17 +15,15 @@ from django.views.decorators.debug import sensitive_variables
 
 from . import config
 from .models import NONCE_LENGTH
+from .models import Bucket
 from .models import FailedAuthenticationAttempt
 from .models import hash_username
+from .models import normalize_username
 
 SALT = "django_device_cookies"
 META_KEY = "DEVICE_COOKIE_AUTH"
 BUCKET_KEY = "DEVICE_COOKIE_AUTH_BUCKET"
 MASK = "*" * 20
-
-
-def normalize_username(username: object) -> str:
-    return unicodedata.normalize("NFKC", str(username)).casefold()
 
 
 def get_username(credentials: Mapping[str, object]) -> str | None:
@@ -44,16 +40,21 @@ def get_username(credentials: Mapping[str, object]) -> str | None:
 def find_user(username: str) -> AbstractBaseUser | None:
     user_model = get_user_model()
     try:
-        return user_model._default_manager.get_by_natural_key(username)
+        user = user_model._default_manager.get_by_natural_key(username)
     except (ObjectDoesNotExist, MultipleObjectsReturned, ValidationError, ValueError):
-        pass
+        user = None
     if "@" not in username:
-        return None
+        return user
     email = {f"{user_model.get_email_field_name()}__iexact": username}
     try:
-        return user_model._default_manager.get(**email)
-    except (ObjectDoesNotExist, MultipleObjectsReturned, FieldError):
+        by_email = user_model._default_manager.get(**email)
+    except (ObjectDoesNotExist, FieldError):
+        return user
+    except MultipleObjectsReturned:
         return None
+    if user is None or user.pk == by_email.pk:
+        return by_email
+    return None
 
 
 def get_cookie_name(username: str) -> str:
@@ -89,12 +90,6 @@ def get_device(request: HttpRequest | None, user: AbstractBaseUser | None) -> st
     return nonce if payload == build_payload(user, nonce) else ""
 
 
-class Bucket(NamedTuple):
-    username: str
-    device: str
-    user: AbstractBaseUser | None = None
-
-
 @sensitive_variables()
 def get_bucket(
     request: HttpRequest | None, credentials: Mapping[str, object]
@@ -103,11 +98,10 @@ def get_bucket(
     if username is None:
         return None
     user = find_user(username)
-    key = normalize_username(user.get_username() if user else username)
-    device = get_device(request, user)
-    if device and FailedAuthenticationAttempt.objects.is_revoked(key, device):
-        device = ""
-    return Bucket(key, device, user)
+    bucket = Bucket(normalize_username(username), get_device(request, user), user)
+    if bucket.device and FailedAuthenticationAttempt.objects.is_revoked(bucket):
+        return bucket._replace(device="")
+    return bucket
 
 
 @sensitive_variables()

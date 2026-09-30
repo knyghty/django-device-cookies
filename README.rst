@@ -148,6 +148,11 @@ With ``DEVICE_COOKIE_HIDE_LOCKOUTS = False``, the user sees this instead:
 If you add one of the package's password reset views, the message also says
 that confirming a password reset in the same browser will clear the lockout.
 
+The message needs the limit reached with one identifier. Attempts with another
+identifier for the same account, such as its email address, fail like a wrong
+password until that identifier reaches the limit too. This keeps the message
+from revealing which email address belongs to a username.
+
 The message is a form error, raised from ``authenticate()`` as
 ``django_device_cookies.exceptions.LockedOutError``. The admin and any form
 built on ``AuthenticationForm`` show it, as long as the template renders the
@@ -205,6 +210,8 @@ For allauth's password reset code, with
 
 The email address is found only through the user model's email field.
 Allauth's email address model is not used.
+A username that is also another account's email address is never trusted and
+has its own lockout.
 Logging in with a phone number is not throttled.
 
 Signals

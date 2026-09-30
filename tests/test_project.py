@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.test import Client
 
 from django_device_cookies.admin import prefix_user_field
+from django_device_cookies.models import Bucket
 from django_device_cookies.models import FailedAuthenticationAttempt
 
 from .helpers import create_user
@@ -25,8 +26,8 @@ URL = "/admin/device_cookies/failedauthenticationattempt/"
 def attempts(db: None) -> None:
     alice = create_user("alice")
     get_user_model().objects.filter(pk=alice.pk).update(email="alice@example.com")
-    FailedAuthenticationAttempt.objects.record_failure("alice", "", alice)
-    FailedAuthenticationAttempt.objects.record_failure("nobody", "")
+    FailedAuthenticationAttempt.objects.record_failure(Bucket("alice", "", alice))
+    FailedAuthenticationAttempt.objects.record_failure(Bucket("nobody", ""))
 
 
 def search(admin_client: Client, query: str) -> list[str]:
